@@ -92,9 +92,6 @@ class Edge:
     def __str__(self):
         return f"{self.begin} -> {self.end}"
 
-    def split(self, x, y):
-        raise ValueError("Split point ({x}, {y}) is not on edge {self}")
-
     def draw(self, terminal):
         if self.is_horizontal():
             with terminal.location(self.begin.x + 1, self.begin.y):
