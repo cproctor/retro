@@ -23,7 +23,7 @@ class Game:
     def __init__(self, agents, state, board_size=(64, 32), debug=False, framerate=24):
         self.log_messages = []
         self.agents_by_name = {}
-        self.agents_by_position = defaultdict(list)
+        self.agents = []
         self.state = validate_state(state)
         self.board_size = board_size
         self.debug = debug
@@ -36,8 +36,8 @@ class Game:
         terminal = Terminal()
         with terminal.fullscreen(), terminal.hidden_cursor(), terminal.cbreak():
             view = View(terminal, self.board_size, self.debug)
-            signal(SIGWINCH, view.render_layout)
-            view.render_layout()
+            #signal(SIGWINCH, view.render_layout)
+            #view.render_layout()
             for turn_number in self.clock.run():
                 self.turn_number = turn_number
                 for name, agent in sorted(self.agents_by_name.items()):
@@ -55,15 +55,19 @@ class Game:
         if not self.on_board(agent.position):
             raise IllegalMove(agent, agent.position)
         self.agents_by_name[agent.name] = agent
-        self.agents_by_position[agent.position].append(agent)
+        self.agents.append(agent)
 
     def get_agent_by_name(self, name):
         validate_agent_name(name)
         return self.agents_by_name[name]
 
-    def get_agents_by_position(self, position):
-        validate_position(position)
-        return self.agents_by_position[position]
+    def get_agents_by_position(self):
+        positions = defaultdict(list)
+        for agent in self.agents:
+            validate_position(agent.position)
+            positions[agent.position].append(agent)
+        return positions
+
 
     def remove_agent_by_name(self, name):
         validate_agent_name(name)
@@ -71,14 +75,6 @@ class Game:
             raise AgentNotFound(name)
         agent = self.agents.pop(name)
         self.agents_by_position[agent.position].remove(agent)
-
-    def move_agent(self, agent, position):
-        validate_position(position)
-        if not self.on_board(position):
-            raise IllegalMove(agent, position)
-        self.agents_by_position[agent.position].remove(agent)
-        agent.position = position
-        self.agents_by_position[agent.position].append(agent)
 
     def on_board(self, position):
         validate_position(position)

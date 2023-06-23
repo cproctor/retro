@@ -13,12 +13,16 @@ class View:
         self.debug = debug
 
     def render(self, game):
-        pass
+        self.render_layout()
+        ox, oy = self.get_board_origin_coords()
+        for agent in sorted(game.agents, key=lambda a: getattr(a, 'z', 0)):
+            ax, ay = agent.position
+            print(self.terminal.move_xy(ox + ax, oy + ay) + agent.character)
 
     def render_layout(self):
         bw, bh = self.board_size
         self.check_terminal_size()
-        self.terminal.clear()
+        print(self.terminal.clear)
         layout_graph = self.get_layout_graph()
         layout_graph.render(self.terminal)
 
