@@ -16,6 +16,9 @@ class IllegalMove(GameError):
         message = f"Agent {agent.name} tried to move to {position}"
         super().__init__(message)
 
+class GraphError(GameError):
+    pass
+
 class TerminalTooSmall(GameError):
     BORDER_X = 2
     BORDER_Y = 3

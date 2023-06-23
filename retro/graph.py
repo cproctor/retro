@@ -1,17 +1,58 @@
-class Graph:
+from retro.errors import GraphError
 
-    def __init__(self, vertices, edges):
-        self.vertices = vertices
-        self.edges = edges
+class Graph:
+    def __init__(self, vertices=None, edges=None):
+        self.vertices = vertices or []
+        self.edges = edges or []
 
     def __str__(self):
         return '\n'.join(str(e) for e in self.edges)
 
-    def draw(self, terminal):
+    def get_or_create_vertex(self, x, y):
         for v in self.vertices:
-            v.draw(terminal)
+            if x == v.x and y == v.y:
+                return v
         for e in self.edges:
-            e.draw(terminal)
+            if e.crosses(x, y):
+                return self.split_edge(e, x, y)
+        v = Vertex(x, y)
+        self.vertices.append(v)
+        return v
+
+    def get_or_create_edge(self, x0, y0, x1, y1):
+        v0 = self.get_or_create_vertex(x0, y0)
+        v1 = self.get_or_create_vertex(x1, y1)
+        new_edge = Edge(v0, v1)
+        for e in self.edges:
+            if e == new_edge:
+                new_edge.remove()
+                return e
+        return new_edge
+
+    def split_edge(self, edge, x, y):
+        """
+        Splits an edge by inserting a new vertex along the edge. 
+        """
+        if not edge.crosses(x, y):
+            raise GraphError(f"Can't split edge {edge} at ({x}, {y})")
+        self.remove_edge(edge)
+        v = Vertex(x, y)
+        self.vertices.append(v)
+        self.edges.append(Edge(edge.begin, v))
+        self.edges.append(Edge(v, edge.end))
+
+    def remove_edge(self, edge):
+        if edge not in self.edges:
+            raise GraphError(f"Edge {edge} is not in the graph")
+        self.edges.remove(edge)
+        edge.begin.edges.remove(edge)
+        edge.end.edges.remove(edge)
+
+    def render(self, terminal):
+        for v in self.vertices:
+            v.render(terminal)
+        for e in self.edges:
+            e.render(terminal)
 
 class Vertex:
     CHARACTERS = {
@@ -40,6 +81,9 @@ class Vertex:
     def __str__(self):
         return f"({self.x}, {self.y})"
 
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
+
     def neighbors(self):
         vertices = []
         for edge in self.edges:
@@ -49,7 +93,7 @@ class Vertex:
                 vertices.append(edge.begin)
         return vertices
 
-    def draw(self, terminal):
+    def render(self, terminal):
         print(terminal.move_xy(self.x, self.y) + self.get_character())
 
     def get_character(self):
@@ -92,7 +136,7 @@ class Edge:
     def __str__(self):
         return f"{self.begin} -> {self.end}"
 
-    def draw(self, terminal):
+    def render(self, terminal):
         if self.is_horizontal():
             with terminal.location(self.begin.x + 1, self.begin.y):
                 line = "═" * (self.end.x - self.begin.x - 1)
@@ -106,3 +150,13 @@ class Edge:
 
     def is_vertical(self):
         return self.begin.x == self.end.x
+
+    def crosses(self, x, y):
+        if self.is_horizontal():
+            return self.begin.y == y and self.begin.x < x and x < self.end.x
+        else:
+            return self.begin.x == x and self.begin.y < y and y < self.end.y
+
+    def remove(self):
+        self.begin.edges.remove(self)
+        self.end.edges.remove(self)

@@ -20,7 +20,7 @@ class Game:
     """
     STATE_HEIGHT = 5
 
-    def __init__(self, agents, state, board_size=(32, 32), debug=False, framerate=24):
+    def __init__(self, agents, state, board_size=(64, 32), debug=False, framerate=24):
         self.log_messages = []
         self.agents_by_name = {}
         self.agents_by_position = defaultdict(list)
@@ -43,6 +43,7 @@ class Game:
                 for name, agent in sorted(self.agents_by_name.items()):
                     if hasattr(agent, 'play_turn'):
                         agent.play_turn(self)
+                view.render(self)
 
     def log(self, message):
         self.log_messages.append((self.turn_number, message))
