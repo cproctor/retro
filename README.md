@@ -2,6 +2,24 @@
 
 A simple framework for Terminal-based games.
 
+```
+╔════════════════════════════════╗
+║                                ║
+║                                ║
+║                                ║
+║      *************             ║
+║      *                         ║
+║      *                         ║
+║      **>                       ║
+║             @                  ║
+║                                ║
+║                                ║
+╠════════════════════════════════╣
+║score: 153                      ║
+║                                ║
+╚════════════════════════════════╝
+```
+
 ## Layout
 
 - There are two panes, a fixed-size play area at the top and a state window
