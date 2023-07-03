@@ -13,6 +13,7 @@ class View:
     def render(self, game):
         self.render_layout(game)
         ox, oy = self.get_board_origin_coords(game)
+        self.render_state(game)
         if game.debug:
             self.render_debug_log(game)
         for agent in sorted(game.agents, key=lambda a: getattr(a, 'z', 0)):
@@ -25,6 +26,13 @@ class View:
         print(self.terminal.clear)
         layout_graph = self.get_layout_graph(game)
         layout_graph.render(self.terminal)
+
+    def render_state(self, game):
+        bw, bh = game.board_size
+        ox, oy = self.get_state_origin_coords(game)
+        for i, key in enumerate(sorted(game.state.keys())):
+            msg = f"{key}: {game.state[key]}"[:bw]
+            print(self.terminal.move_xy(ox, oy + i) + msg)
 
     def render_debug_log(self, game):
         bw, bh = game.board_size
@@ -87,6 +95,11 @@ class View:
         else:
             margin_left = (self.terminal.width - bw - self.BORDER_X) // 2
         return margin_left, margin_top
+
+    def get_state_origin_coords(self, game):
+        bw, bh = game.board_size
+        ox, oy = self.get_board_origin_coords(game)
+        return ox, oy + bh + 1
 
     def get_debug_origin_coords(self, game):
         bw, bh = game.board_size

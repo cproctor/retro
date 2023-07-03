@@ -37,14 +37,14 @@ class Game:
         terminal = Terminal()
         with terminal.fullscreen(), terminal.hidden_cursor(), terminal.cbreak():
             view = View(terminal)
-            #signal(SIGWINCH, view.render_layout)
-            #view.render_layout()
             while self.playing:
                 self.turn_number += 1
                 self.keys_pressed = self.collect_keystrokes(terminal)
                 if self.debug and self.keys_pressed:
-                    self.log(str(self.keys_pressed))
+                    self.log("Keys: " + ', '.join(k.name or str(k) for k in self.keys_pressed))
                 for name, agent in sorted(self.agents_by_name.items()):
+                    for key in self.keys_pressed:
+                        agent.handle_keystroke(key, self)
                     if hasattr(agent, 'play_turn'):
                         agent.play_turn(self)
                 view.render(self)
