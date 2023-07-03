@@ -17,8 +17,9 @@ class View:
         if game.debug:
             self.render_debug_log(game)
         for agent in sorted(game.agents, key=lambda a: getattr(a, 'z', 0)):
-            ax, ay = agent.position
-            print(self.terminal.move_xy(ox + ax, oy + ay) + agent.character)
+            if getattr(agent, 'display', True):
+                ax, ay = agent.position
+                print(self.terminal.move_xy(ox + ax, oy + ay) + agent.character)
 
     def render_layout(self, game):
         bw, bh = game.board_size

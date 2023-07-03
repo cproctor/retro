@@ -43,8 +43,9 @@ class Game:
                 if self.debug and self.keys_pressed:
                     self.log("Keys: " + ', '.join(k.name or str(k) for k in self.keys_pressed))
                 for name, agent in sorted(self.agents_by_name.items()):
-                    for key in self.keys_pressed:
-                        agent.handle_keystroke(key, self)
+                    if hasattr(agent, 'handle_keystroke'):
+                        for key in self.keys_pressed:
+                            agent.handle_keystroke(key, self)
                     if hasattr(agent, 'play_turn'):
                         agent.play_turn(self)
                 view.render(self)
@@ -78,6 +79,9 @@ class Game:
     def get_agent_by_name(self, name):
         validate_agent_name(name)
         return self.agents_by_name[name]
+
+    def is_empty(self, position):
+        return position not in self.get_agents_by_position()
 
     def get_agents_by_position(self):
         positions = defaultdict(list)
