@@ -93,7 +93,7 @@ class Apple:
 if __name__ == '__main__':
     head = SnakeHead()
     apple = Apple()
-    game = Game([head, apple], {'score': 0}, board_size=(32, 16))
+    game = Game([head, apple], {'score': 0}, board_size=(32, 16), framerate=12)
     apple.relocate(game)
     game.play()
 
