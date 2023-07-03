@@ -7,29 +7,37 @@ class View:
     STATE_HEIGHT = 5
     DEBUG_WIDTH = 60
 
-    def __init__(self, terminal, board_size, debug=False):
+    def __init__(self, terminal):
         self.terminal = terminal
-        self.board_size = board_size
-        self.debug = debug
 
     def render(self, game):
-        self.render_layout()
-        ox, oy = self.get_board_origin_coords()
+        self.render_layout(game)
+        ox, oy = self.get_board_origin_coords(game)
+        if game.debug:
+            self.render_debug_log(game)
         for agent in sorted(game.agents, key=lambda a: getattr(a, 'z', 0)):
             ax, ay = agent.position
             print(self.terminal.move_xy(ox + ax, oy + ay) + agent.character)
 
-    def render_layout(self):
-        bw, bh = self.board_size
-        self.check_terminal_size()
+    def render_layout(self, game):
+        bw, bh = game.board_size
+        self.check_terminal_size(game)
         print(self.terminal.clear)
-        layout_graph = self.get_layout_graph()
+        layout_graph = self.get_layout_graph(game)
         layout_graph.render(self.terminal)
 
-    def get_layout_graph(self):
-        bw, bh = self.board_size
+    def render_debug_log(self, game):
+        bw, bh = game.board_size
+        debug_height = bh + self.STATE_HEIGHT 
+        ox, oy = self.get_debug_origin_coords(game)
+        for i, (turn_number, message) in enumerate(game.log_messages[-debug_height:]):
+            msg = f"{turn_number}. {message}"[:self.DEBUG_WIDTH]
+            print(self.terminal.move_xy(ox, oy + i) + msg)
+
+    def get_layout_graph(self, game):
+        bw, bh = game.board_size
         sh = self.STATE_HEIGHT
-        ox, oy = self.get_board_origin_coords()
+        ox, oy = self.get_board_origin_coords(game)
 
         vertices = [
             Vertex(ox - 1, oy - 1), 
@@ -49,7 +57,7 @@ class View:
             Edge(vertices[5], vertices[2]),
         ]
         graph = Graph(vertices, edges)
-        if self.debug:
+        if game.debug:
             dw = self.DEBUG_WIDTH
             graph.vertices.append(Vertex(ox + bw + dw, oy - 1))
             graph.vertices.append(Vertex(ox + bw + dw, oy + bh + sh))
@@ -58,8 +66,8 @@ class View:
             graph.edges.append(Edge(graph.vertices[3], graph.vertices[7]))
         return graph
 
-    def check_terminal_size(self):
-        bw, bh = self.board_size
+    def check_terminal_size(self, game):
+        bw, bh = game.board_size
         width_needed = bw + self.BORDER_X
         height_needed = bh + self.BORDER_Y + self.STATE_HEIGHT
         if self.terminal.width < width_needed:
@@ -67,17 +75,22 @@ class View:
         elif self.terminal.height < height_needed:
             raise TerminalTooSmall(height=self.terminal.height, height_needed=height_needed)
 
-    def board_origin(self):
-        x, y = self.get_board_origin_coords()
+    def board_origin(self, game):
+        x, y = self.get_board_origin_coords(game)
         return self.terminal.move_xy(x, y)
 
-    def get_board_origin_coords(self):
-        bw, bh = self.board_size
+    def get_board_origin_coords(self, game):
+        bw, bh = game.board_size
         margin_top = (self.terminal.height - bh - self.BORDER_Y) // 2
-        if self.debug:
+        if game.debug:
             margin_left = (self.terminal.width - bw - self.DEBUG_WIDTH - self.BORDER_X) // 2
         else:
             margin_left = (self.terminal.width - bw - self.BORDER_X) // 2
         return margin_left, margin_top
+
+    def get_debug_origin_coords(self, game):
+        bw, bh = game.board_size
+        ox, oy = self.get_board_origin_coords(game)
+        return ox + bw + 1, oy
 
 

@@ -1,8 +1,8 @@
 from collections import defaultdict
 from signal import signal, SIGWINCH
+from time import sleep
 from blessed import Terminal
 from retro.view import View
-from retro.clock import Clock
 from retro.validation import (
     validate_agent, 
     validate_state,
@@ -28,25 +28,43 @@ class Game:
         self.board_size = board_size
         self.debug = debug
         self.framerate = framerate
-        self.clock = Clock(1/framerate)
+        self.turn_number = 0
         for agent in agents:
             self.add_agent(agent)
 
     def play(self):
+        self.playing = True
         terminal = Terminal()
         with terminal.fullscreen(), terminal.hidden_cursor(), terminal.cbreak():
-            view = View(terminal, self.board_size, self.debug)
+            view = View(terminal)
             #signal(SIGWINCH, view.render_layout)
             #view.render_layout()
-            for turn_number in self.clock.run():
-                self.turn_number = turn_number
+            while self.playing:
+                self.turn_number += 1
+                self.keys_pressed = self.collect_keystrokes(terminal)
+                if self.debug and self.keys_pressed:
+                    self.log(str(self.keys_pressed))
                 for name, agent in sorted(self.agents_by_name.items()):
                     if hasattr(agent, 'play_turn'):
                         agent.play_turn(self)
                 view.render(self)
 
+    def collect_keystrokes(self, terminal):
+        keys = set()
+        while True:
+            key = terminal.inkey(0.01)
+            if key: 
+                keys.add(key)
+            else:
+                break
+        sleep(1/self.framerate)
+        return keys
+
     def log(self, message):
         self.log_messages.append((self.turn_number, message))
+
+    def end(self):
+        self.playing = False
 
     def add_agent(self, agent):
         validate_agent(agent)
@@ -67,7 +85,6 @@ class Game:
             validate_position(agent.position)
             positions[agent.position].append(agent)
         return positions
-
 
     def remove_agent_by_name(self, name):
         validate_agent_name(name)
