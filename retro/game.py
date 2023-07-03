@@ -32,11 +32,11 @@ class Game:
         for agent in agents:
             self.add_agent(agent)
 
-    def play(self):
+    def play(self, color='white_on_black'):
         self.playing = True
         terminal = Terminal()
         with terminal.fullscreen(), terminal.hidden_cursor(), terminal.cbreak():
-            view = View(terminal)
+            view = View(terminal, color=color)
             while self.playing:
                 self.turn_number += 1
                 self.keys_pressed = self.collect_keystrokes(terminal)

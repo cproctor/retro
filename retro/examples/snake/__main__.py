@@ -77,6 +77,7 @@ class SnakeBodySegment:
 class Apple:
     name = "Apple"
     character = '@'
+    color = "red_on_black"
     position = (0, 0)
 
     def relocate(self, game):

@@ -7,8 +7,9 @@ class View:
     STATE_HEIGHT = 5
     DEBUG_WIDTH = 60
 
-    def __init__(self, terminal):
+    def __init__(self, terminal, color='white_on_black'):
         self.terminal = terminal
+        self.color = color
 
     def render(self, game):
         self.render_layout(game)
@@ -19,14 +20,30 @@ class View:
         for agent in sorted(game.agents, key=lambda a: getattr(a, 'z', 0)):
             if getattr(agent, 'display', True):
                 ax, ay = agent.position
-                print(self.terminal.move_xy(ox + ax, oy + ay) + agent.character)
+                if hasattr(agent, 'color'):
+                    color = self.get_color(agent.color)
+                    print(self.terminal.move_xy(ox + ax, oy + ay) + color(agent.character))
+                else:
+                    print(self.terminal.move_xy(ox + ax, oy + ay) + agent.character)
 
     def render_layout(self, game):
         bw, bh = game.board_size
         self.check_terminal_size(game)
-        print(self.terminal.clear)
+        self.clear_screen()
         layout_graph = self.get_layout_graph(game)
         layout_graph.render(self.terminal)
+
+    def clear_screen(self):
+        print(self.terminal.home + self.get_color(self.color) + self.terminal.clear)
+
+    def get_color(self, color_string):
+        if not hasattr(self.terminal, color_string):
+            msg = (
+                f"{color_string} is not a supported color."
+                "See https://blessed.readthedocs.io/en/latest/colors.html"
+            )
+            raise ValueError(msg)
+        return getattr(self.terminal, color_string)
 
     def render_state(self, game):
         bw, bh = game.board_size
