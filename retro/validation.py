@@ -2,10 +2,12 @@
 def validate_agent(agent):
     if not hasattr(agent, "name"):
         raise ValueError(f"Agent {agent} must have a name")
-    if not hasattr(agent, "position"):
-        raise ValueError(f"Agent {agent.name} must have a position")
+    if getattr(agent, 'display', True):
+        validate_position(agent.position)
+        if not hasattr(agent, "character"):
+            raise ValueError(f"Agent {agent.name} must have a character")
+
     validate_agent_name(agent.name)
-    validate_position(agent.position)
     return agent
 
 def validate_state(state):

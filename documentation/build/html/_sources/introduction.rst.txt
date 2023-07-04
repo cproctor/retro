@@ -1,0 +1,12 @@
+Introduction
+============
+
+This introduction will guide you through how to create games using ``Retro``.
+This introduction is meant for Python beginners, but you should know the basics 
+of Object-Oriented programming, including how to define classes and create 
+class instances. 
+
+.. toctree::
+   :maxdepth: 1
+
+   snake

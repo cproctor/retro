@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>retro.agent &#8212; Retro Games 0.1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css" />
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+    <script src="../../_static/doctools.js"></script>
+    <script src="../../_static/sphinx_highlight.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for retro.agent</h1><div class="highlight"><pre>
+<div class="viewcode-block" id="Agent"><a class="viewcode-back" href="../../api/agent.html#retro.agent.Agent">[docs]</a><span></span><span class="k">class</span> <span class="nc">Agent</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Represents a character in the game. To create an Agent, define a new</span>
+<span class="sd">    class with some of the attributes and methods below. You may change any of</span>
+<span class="sd">    the Agent&#39;s attributes at any time, and the result will immediately be </span>
+<span class="sd">    visible in the game.</span>
+
+<span class="sd">    After you create your Agents, add them to the ``Game``, either when it is created</span>
+<span class="sd">    or using ``Game.add_agent`` later on. Then the Game will take care of calling </span>
+<span class="sd">    the Agent&#39;s methods at the appropriate times. </span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        name: (Required) Each agent in the game must have a distinct name. </span>
+<span class="sd">        character: (Required) A one-character string which will be displayed </span>
+<span class="sd">            at the Agent&#39;s position on the game board. </span>
+<span class="sd">        position: (Required) The character&#39;s ``(int, int)`` position on the game</span>
+<span class="sd">            board. </span>
+<span class="sd">        display: (Optional) When ``False``, the Agent will not be displayed on the </span>
+<span class="sd">            board. This is useful when you want to create an agent which will be displayed</span>
+<span class="sd">            later, or when you want to create an agent which acts on the Game indirectly, </span>
+<span class="sd">            for example by spawning other Agents. Defaults to True.</span>
+<span class="sd">        z: (Optional) When multiple Agents have the same position on the board, the </span>
+<span class="sd">            Agent with the highest ``z`` value will be displayed. </span>
+<span class="sd">            The Game is played on a two-dimensional (x, y) board, but you can think of </span>
+<span class="sd">            ``z`` as a third &quot;up&quot; dimension. Defaults to 0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;agent&quot;</span>
+    <span class="n">character</span> <span class="o">=</span> <span class="s2">&quot;*&quot;</span>
+    <span class="n">position</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="n">display</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="Agent.play_turn"><a class="viewcode-back" href="../../api/agent.html#retro.agent.Agent.play_turn">[docs]</a>    <span class="k">def</span> <span class="nf">play_turn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">game</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;If an Agent has a ``play_turn`` method, it will be called once </span>
+<span class="sd">        each turn. </span>
+
+<span class="sd">        Arguments: </span>
+<span class="sd">            game (Game): The game which is currently being played will be </span>
+<span class="sd">                passed to the Agent, in case it needs to check anything about</span>
+<span class="sd">                the game or make any changes. </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="Agent.handle_keystroke"><a class="viewcode-back" href="../../api/agent.html#retro.agent.Agent.handle_keystroke">[docs]</a>    <span class="k">def</span> <span class="nf">handle_keystroke</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keystroke</span><span class="p">,</span> <span class="n">game</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;If an Agent has a ``handle_keystroke`` method, it will be called every</span>
+<span class="sd">        time a key is pressed in the game. </span>
+
+<span class="sd">        Arguments: </span>
+<span class="sd">            keystroke (blessed.keyboard.Keystroke): The key which was pressed. You can </span>
+<span class="sd">                compare a Keystroke with a string (e.g. ``if keystroke == &#39;q&#39;``) to check </span>
+<span class="sd">                whether it is a regular letter, number, or symbol on the keyboard. You can </span>
+<span class="sd">                check special keys using the keystroke&#39;s name </span>
+<span class="sd">                (e.g. ``if keystroke.name == &quot;KEY_RIGHT&quot;``). Run your game in debug mode to </span>
+<span class="sd">                see the names of keystrokes. </span>
+<span class="sd">            game (Game): The game which is currently being played will be </span>
+<span class="sd">                passed to the Agent, in case it needs to check anything about</span>
+<span class="sd">                the game or make any changes. </span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div></div>
+
+<span class="k">class</span> <span class="nc">ArrowKeyAgent</span><span class="p">:</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;ArrowKeyAgent&quot;</span>
+    <span class="n">character</span> <span class="o">=</span> <span class="s2">&quot;*&quot;</span>
+    <span class="n">position</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">display</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">play_turn</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">game</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span> <span class="nf">handle_keystroke</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keystroke</span><span class="p">,</span> <span class="n">game</span><span class="p">):</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">position</span>
+        <span class="k">if</span> <span class="n">keystroke</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;KEY_RIGHT&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">try_to_move</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">game</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">keystroke</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;KEY_UP&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">try_to_move</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">game</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">keystroke</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;KEY_LEFT&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">try_to_move</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">game</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">keystroke</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;KEY_DOWN&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">try_to_move</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">game</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">try_to_move</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">game</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">game</span><span class="o">.</span><span class="n">on_board</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">Retro Games</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pedagogy.html">Pedagogy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api/index.html">API</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>document.getElementById('searchbox').style.display = "block"</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2023, Chris Proctor.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 7.0.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.13</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
