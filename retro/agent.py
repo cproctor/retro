@@ -30,7 +30,7 @@ class Agent:
     z = 0
 
     def play_turn(self, game):
-        """If an Agent has a ``play_turn`` method, it will be called once 
+        """If an Agent has this method, it will be called once 
         each turn. 
 
         Arguments: 
@@ -41,8 +41,8 @@ class Agent:
         pass
 
     def handle_keystroke(self, keystroke, game):
-        """If an Agent has a ``handle_keystroke`` method, it will be called every
-        time a key is pressed in the game. 
+        """If an Agent has a this method, it will be called every
+        time a key is pressed in the game.
 
         Arguments: 
             keystroke (blessed.keyboard.Keystroke): The key which was pressed. You can 
@@ -59,6 +59,8 @@ class Agent:
         pass
 
 class ArrowKeyAgent:
+    """A simple agent which can be moved around with the arrow keys.
+    """
     name = "ArrowKeyAgent"
     character = "*"
     position = (0,0)
@@ -69,16 +71,24 @@ class ArrowKeyAgent:
         pass
 
     def handle_keystroke(self, keystroke, game):
+        """Moves the agent's position if the keystroke is one of the arrow keys.
+        One by one, checks the keystroke's name against each arrow key. 
+        Then uses :py:meth:`try_to_move` to check whether the move is on the 
+        game's board before moving.
+        """
         x, y = self.position
         if keystroke.name == "KEY_RIGHT":
-            self.try_to_move(x + 1, y, game)
+            self.try_to_move((x + 1, y), game)
         elif keystroke.name == "KEY_UP":
-            self.try_to_move(x, y - 1, game)
+            self.try_to_move((x, y - 1), game)
         elif keystroke.name == "KEY_LEFT":
-            self.try_to_move(x - 1, y, game)
+            self.try_to_move((x - 1, y), game)
         elif keystroke.name == "KEY_DOWN":
-            self.try_to_move(x, y + 1, game)
+            self.try_to_move((x, y + 1), game)
 
-    def try_to_move(self, x, y, game):
-        if game.on_board((x, y)):
-            self.position = (x, y)
+    def try_to_move(self, position, game):
+        """Moves to the position if it is on the game board. 
+        """
+        if game.on_board(position):
+            self.position = position
+            game.log(f"Position: {self.position}")

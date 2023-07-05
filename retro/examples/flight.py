@@ -37,17 +37,19 @@ class Asteroid:
         self.position = position
 
     def play_turn(self, game):
-        self.set_color()
-        x, y = self.position
-        if y == HEIGHT - 1: 
-            game.remove_agent_by_name(self.name)
-        else:
-            new_position = (x, y + 1)
-            if game.is_empty(new_position):
-                self.position = new_position
+        if game.turn_number % 2 == 0: 
+            self.set_color()
+            x, y = self.position
+            if y == HEIGHT - 1: 
+                game.remove_agent_by_name(self.name)
             else:
-                game.get_agent_by_name('ship').explode()
-                game.end()
+                ship = game.get_agent_by_name('ship')
+                new_position = (x, y + 1)
+                if new_position == ship.position:
+                    ship.explode()
+                    game.end()
+                else:
+                    self.position = new_position
 
     def set_color(self):
         x, y = self.position
@@ -84,7 +86,8 @@ if __name__ == '__main__':
     game = Game(
         [ship, spawner],
         {"score": 0},
-        board_size=(WIDTH, HEIGHT)
+        board_size=(WIDTH, HEIGHT),
+        color="deepskyblue4_on_skyblue1",
     )
-    game.play(color="deepskyblue4_on_skyblue1")
+    game.play()
 

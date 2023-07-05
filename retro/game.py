@@ -1,6 +1,6 @@
 from collections import defaultdict
 from signal import signal, SIGWINCH
-from time import sleep
+from time import sleep, perf_counter
 from blessed import Terminal
 from retro.view import View
 from retro.validation import (
@@ -28,6 +28,7 @@ class Game:
         debug (bool): (Optional) Turn on debug mode, showing log messages while playing.
         framerate (int): (Optional) The target number of frames per second at which the 
             game should run.
+        color (str): (Optional) The game's background color scheme. `Available colors <https://blessed.readthedocs.io/en/latest/colors.html>`_.
 
     ::
 
@@ -44,7 +45,8 @@ class Game:
     STATE_HEIGHT = 5
     EXIT_CHARACTERS = ("KEY_ENTER", "KEY_ESCAPE")
 
-    def __init__(self, agents, state, board_size=(64, 32), debug=False, framerate=24):
+    def __init__(self, agents, state, board_size=(64, 32), debug=False, framerate=24, 
+                 color="white_on_black"):
         self.log_messages = []
         self.agents_by_name = {}
         self.agents = []
@@ -53,20 +55,19 @@ class Game:
         self.debug = debug
         self.framerate = framerate
         self.turn_number = 0
+        self.color = color
         for agent in agents:
             self.add_agent(agent)
 
-    def play(self, color='white_on_black'):
+    def play(self):
         """Starts the game.
-
-        Arguments:
-            color (str): (Optional) The game's background color scheme. `Available colors <https://blessed.readthedocs.io/en/latest/colors.html>`_.
         """
         self.playing = True
         terminal = Terminal()
         with terminal.fullscreen(), terminal.hidden_cursor(), terminal.cbreak():
-            view = View(terminal, color=color)
+            view = View(terminal, color=self.color)
             while self.playing:
+                turn_start_time = perf_counter()
                 self.turn_number += 1
                 self.keys_pressed = self.collect_keystrokes(terminal)
                 if self.debug and self.keys_pressed:
@@ -81,6 +82,10 @@ class Game:
                         if not self.on_board(agent.position):
                             raise IllegalMove(agent, agent.position)
                 view.render(self)
+                turn_end_time = perf_counter()
+                time_elapsed_in_turn = turn_end_time - turn_start_time
+                time_remaining_in_turn = max(0, 1/self.framerate - time_elapsed_in_turn)
+                sleep(time_remaining_in_turn)
             while True:
                 if terminal.inkey().name in self.EXIT_CHARACTERS:
                     break
@@ -88,12 +93,11 @@ class Game:
     def collect_keystrokes(self, terminal):
         keys = set()
         while True:
-            key = terminal.inkey(0.01)
+            key = terminal.inkey(0.001)
             if key: 
                 keys.add(key)
             else:
                 break
-        sleep(1/self.framerate)
         return keys
 
     def log(self, message):
