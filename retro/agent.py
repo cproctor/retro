@@ -9,13 +9,15 @@ class Agent:
     the Agent's methods at the appropriate times. 
 
     Attributes:
-        character: (Required) A one-character string which will be displayed 
-            at the Agent's position on the game board. 
         position: (Required) The character's ``(int, int)`` position on the game
             board. 
+        character: (Required unless display is ``False``.) A one-character string 
+            which will be displayed at the Agent's position on the game board. 
         name: (Optional) If an agent has a name, it must be unique within the game. 
             Agent names can be used to look up agents with 
             :py:meth:`retro.game.Game.get_agent_by_name`. 
+        color (str): (Optional) The agent's color. 
+            `Available colors <https://blessed.readthedocs.io/en/latest/colors.html>`_.
         display: (Optional) When ``False``, the Agent will not be displayed on the 
             board. This is useful when you want to create an agent which will be displayed
             later, or when you want to create an agent which acts on the Game indirectly, 
@@ -28,6 +30,7 @@ class Agent:
     character = "*"
     position = (0, 0)
     name = "agent"
+    color = "white_on_black"
     display = True
     z = 0
 
