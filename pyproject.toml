@@ -1,9 +1,11 @@
 [tool.poetry]
 name = "retro-games"
-version = "0.1.1"
+version = "0.1.2"
 description = "A simple framework for Terminal-based games"
 authors = ["Chris Proctor <chris@chrisproctor.net>"]
 readme = "README.md"
+homepage = "https://makingwithcode.org"
+documentation = "https://retro-games.readthedocs.io/en/latest/"
 packages = [
 { include = "retro" },
 ]
