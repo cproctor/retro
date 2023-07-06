@@ -32,8 +32,7 @@ class Asteroid:
     character = 'O'
     color = "deepskyblue1_on_skyblue1"
 
-    def __init__(self, name, position):
-        self.name = name
+    def __init__(self, position):
         self.position = position
 
     def play_turn(self, game):
@@ -41,7 +40,7 @@ class Asteroid:
             self.set_color()
             x, y = self.position
             if y == HEIGHT - 1: 
-                game.remove_agent_by_name(self.name)
+                game.remove_agent(self)
             else:
                 ship = game.get_agent_by_name('ship')
                 new_position = (x, y + 1)
@@ -71,23 +70,19 @@ class AsteroidSpawner:
     def play_turn(self, game):
         game.state['score'] += 1
         if self.should_spawn_asteroid(game.turn_number):
-            asteroid = Asteroid(
-                f"asteroid {game.turn_number}",
-                (randint(0, WIDTH - 1), 0)
-            )
+            asteroid = Asteroid((randint(0, WIDTH - 1), 0))
             game.add_agent(asteroid)
 
     def should_spawn_asteroid(self, turn_number):
         return randint(0, 1000) < turn_number
 
-if __name__ == '__main__':
-    ship = Spaceship()
-    spawner = AsteroidSpawner()
-    game = Game(
-        [ship, spawner],
-        {"score": 0},
-        board_size=(WIDTH, HEIGHT),
-        color="deepskyblue4_on_skyblue1",
-    )
-    game.play()
+ship = Spaceship()
+spawner = AsteroidSpawner()
+game = Game(
+    [ship, spawner],
+    {"score": 0},
+    board_size=(WIDTH, HEIGHT),
+    color="deepskyblue4_on_skyblue1",
+)
+game.play()
 

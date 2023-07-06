@@ -1,14 +1,20 @@
 class GameError(Exception):
     pass
 
-class AgentAlreadyExists(GameError):
+class AgentWithNameAlreadyExists(GameError):
     def __init__(self, name):
         message = f"There is already an agent named {agent.name} in the game"
         super().__init__(message)
 
-class AgentNotFound(GameError):
+class AgentNotFoundByName(GameError):
     def __init__(self, name):
         message = f"There is no agent named {agent.name} in the game"
+        super().__init__(message)
+
+class AgentNotInGame(GameError):
+    def __init__(self, agent):
+        name = agent.name or f"anonymous {agent.__class__.__name__}"
+        message = f"Agent {name} is not in the game"
         super().__init__(message)
 
 class IllegalMove(GameError):

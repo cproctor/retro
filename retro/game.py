@@ -10,8 +10,8 @@ from retro.validation import (
     validate_position,
 )
 from retro.errors import (
-    AgentAlreadyExists,
-    AgentNotFound,
+    AgentWithNameAlreadyExists,
+    AgentNotFoundByName,
     IllegalMove,
 )
 
@@ -22,7 +22,7 @@ class Game:
     this class works. The main work in creating a 
 
     Arguments: 
-        agents (list): A list of Agents to add to the game. 
+        agents (list): A list of agents to add to the game. 
         state (dict): A dict containing the game's initial state. 
         board_size (int, int): (Optional) The two-dimensional size of the game board. D
         debug (bool): (Optional) Turn on debug mode, showing log messages while playing.
@@ -72,7 +72,7 @@ class Game:
                 self.keys_pressed = self.collect_keystrokes(terminal)
                 if self.debug and self.keys_pressed:
                     self.log("Keys: " + ', '.join(k.name or str(k) for k in self.keys_pressed))
-                for name, agent in sorted(self.agents_by_name.items()):
+                for agent in self.agents:
                     if hasattr(agent, 'handle_keystroke'):
                         for key in self.keys_pressed:
                             agent.handle_keystroke(key, self)
@@ -116,7 +116,7 @@ class Game:
         self.playing = False
 
     def add_agent(self, agent):
-        """Adds an Agent to the game.
+        """Adds an agent to the game.
         Whenever you want to add a new agent during the game, you must add it to 
         the game using this method.
 
@@ -124,11 +124,12 @@ class Game:
             agent: An instance of an agent class. 
         """
         validate_agent(agent)
-        if agent.name in self.agents_by_name:
-            raise AgentAlreadyExists(agent.name)
         if getattr(agent, "display", True) and not self.on_board(agent.position):
             raise IllegalMove(agent, agent.position)
-        self.agents_by_name[agent.name] = agent
+        if hasattr(agent, "name"): 
+            if agent.name in self.agents_by_name:
+                raise AgentWithNameAlreadyExists(agent.name)
+            self.agents_by_name[agent.name] = agent
         self.agents.append(agent)
 
     def get_agent_by_name(self, name):
@@ -136,14 +137,17 @@ class Game:
         This is useful when one agent needs to interact with another agent.
 
         Arguments: 
-            name (str): The Agent's name. If there is no agent with this name, 
+            name (str): The agent's name. If there is no agent with this name, 
                 you will get an error.
 
         Returns: 
-            An Agent.
+            An agent.
         """
         validate_agent_name(name)
-        return self.agents_by_name[name]
+        if name in self.agents_by_name:
+            return self.agents_by_name[name]
+        else:
+            raise AgentNotFoundByName(name)
 
     def is_empty(self, position):
         """Checks whether a position is occupied by any agents.
@@ -158,8 +162,8 @@ class Game:
 
     def get_agents_by_position(self):
         """Returns a dict where each key is a position (e.g. (10, 20)) and 
-        each value is a list containing all the Agents at that position.
-        This is useful when an Agent needs to find out which other Agents are
+        each value is a list containing all the agents at that position.
+        This is useful when an agent needs to find out which other agents are
         on the same space or nearby.
         """
         positions = defaultdict(list)
@@ -169,15 +173,28 @@ class Game:
                 positions[agent.position].append(agent)
         return positions
 
-    def remove_agent_by_name(self, name):
-        """Removes an Agent from the game. 
+    def remove_agent(self, agent):
+        """Removes an agent from the game. 
 
         Arguments:
-            name (str): the Agent's name.
+            agent (Agent): the agent to remove.
+        """
+        if agent not in self.agents:
+            raise AgentNotInGame(agent)
+        else:
+            self.agents.remove(agent)
+            if hasattr(agent, "name"):
+                self.agents_by_name.pop(agent.name)
+
+    def remove_agent_by_name(self, name):
+        """Removes an agent from the game. 
+
+        Arguments:
+            name (str): the agent's name.
         """
         validate_agent_name(name)
         if name not in self.agents_by_name:
-            raise AgentNotFound(name)
+            raise AgentNotFoundByName(name)
         agent = self.agents_by_name.pop(name)
         self.agents.remove(agent)
 
