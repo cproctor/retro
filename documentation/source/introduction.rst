@@ -217,10 +217,12 @@ to add an Asteroid to the game::
     game = Game([ship, asteroid], {"score": 0}, board_size=(WIDTH, HEIGHT))
     game.play()
 
-Your code should now look like this ::ref:`asteroid_v1`. Test it out a few times.
+Your code should now look like :ref:`nav_v1`. Test it out a few times.
 
 But we want lots of asteroids! Let's write another agent class for an AsteroidSpawner, 
 which will possibly spawn an asteroid each turn::
+
+    from random import randint
 
     class AsteroidSpawner:
         display = False
@@ -256,12 +258,14 @@ code at the bottom::
     state = {"score": 0}
     game = Game(
         [ship, spawner],
-        state
+        state,
         board_size=(WIDTH, HEIGHT)
     )
     game.play()
 
-You should have a fully-functioning game. The full 
+You should have a fully-functioning game. :ref:`nav` contains
+a few more details to make the game look nicer. Read 
+:ref:`snake` for a more complex example game.
 
 .. toctree::
    :maxdepth: 1

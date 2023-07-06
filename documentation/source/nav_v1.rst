@@ -1,4 +1,4 @@
-.. _asteroid_v1:
+.. _nav_v1:
 
 Nav (Version 1)
 ===============
@@ -49,5 +49,9 @@ Nav (Version 1)
 
     ship = Spaceship()
     asteroid = Asteroid("asteroid", (WIDTH // 2, 0))
-    game = Game([ship, asteroid], {"score": 0}, board_size=(WIDTH, HEIGHT))
+    game = Game(
+        [ship, asteroid], 
+        {"score": 0}, 
+        board_size=(WIDTH, HEIGHT)
+    )
     game.play()

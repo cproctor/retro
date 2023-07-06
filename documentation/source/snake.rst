@@ -1,3 +1,5 @@
+.. _snake:
+
 Extended example: Snake
 =======================
 

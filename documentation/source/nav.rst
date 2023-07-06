@@ -1,5 +1,7 @@
-Nav
-===
+.. _nav:
+
+Nav (Full version)
+==================
 
 .. automodule:: retro.examples.nav
    :members:
