@@ -9,11 +9,13 @@ class Agent:
     the Agent's methods at the appropriate times. 
 
     Attributes:
-        name: (Required) Each agent in the game must have a distinct name. 
         character: (Required) A one-character string which will be displayed 
             at the Agent's position on the game board. 
         position: (Required) The character's ``(int, int)`` position on the game
             board. 
+        name: (Optional) If an agent has a name, it must be unique within the game. 
+            Agent names can be used to look up agents with 
+            :py:meth:`retro.game.Game.get_agent_by_name`. 
         display: (Optional) When ``False``, the Agent will not be displayed on the 
             board. This is useful when you want to create an agent which will be displayed
             later, or when you want to create an agent which acts on the Game indirectly, 
@@ -23,9 +25,9 @@ class Agent:
             The Game is played on a two-dimensional (x, y) board, but you can think of 
             ``z`` as a third "up" dimension. Defaults to 0.
     """
-    name = "agent"
     character = "*"
     position = (0, 0)
+    name = "agent"
     display = True
     z = 0
 
