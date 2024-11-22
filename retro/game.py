@@ -124,8 +124,7 @@ class Game:
         Returns None when agents is empty.
         """
         if agents:
-            agents_with_z = [(getattr(a, 'z', 0), a) for a in agents]
-            return sorted(agents_with_z, reverse=True)[0][1]
+            return sorted(agents, key=lambda a: getattr(a, 'z', 0), reverse=True)[0]
 
     def collect_keystrokes(self, terminal):
         keys = set()
