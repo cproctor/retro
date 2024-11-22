@@ -1,6 +1,14 @@
 from retro.graph import Vertex, Edge, Graph
 from retro.errors import TerminalTooSmall
 
+identity = lambda x: x
+
+def vector_add(vec0, vec1):
+    "Adds two vectors."
+    x0, y0 = vec0
+    x1, y1 = vec1
+    return (x0 + x1, y0 + y1)
+
 class View:
     BORDER_X = 2
     BORDER_Y = 3
@@ -9,22 +17,27 @@ class View:
 
     def __init__(self, terminal, color='white_on_black'):
         self.terminal = terminal
+        self.terminal_size = (self.terminal.width, self.terminal.height)
         self.color = color
+        self.initial_render = True
 
-    def render(self, game):
-        self.render_layout(game)
-        ox, oy = self.get_board_origin_coords(game)
-        self.render_state(game)
+    def render(self, game, agent_position_updates):
+        if self.initial_render or self.terminal_size_changed():
+            self.terminal_size = (self.terminal.width, self.terminal.height)
+            self.render_layout(game)
+        if self.initial_render or game.state.changed:
+            self.render_state(game)
         if game.debug:
             self.render_debug_log(game)
-        for agent in sorted(game.agents, key=lambda a: getattr(a, 'z', 0)):
-            if getattr(agent, 'display', True):
-                ax, ay = agent.position
-                if hasattr(agent, 'color'):
-                    color = self.get_color(agent.color)
-                    print(self.terminal.move_xy(ox + ax, oy + ay) + color(agent.character))
-                else:
-                    print(self.terminal.move_xy(ox + ax, oy + ay) + agent.character)
+        self.render_agent_position_updates(game, agent_position_updates)
+        self.initial_render = False
+
+    def render_agent_position_updates(self, game, updates):
+        origin = self.get_board_origin_coords(game)
+        for position, agent in updates.items():
+            x, y = vector_add(origin, agent.position)
+            color = self.get_color(agent.color) if hasattr(agent, 'color') else identity
+            print(self.terminal.move_xy(x, y) + color(agent.character))
 
     def render_layout(self, game):
         bw, bh = game.board_size
@@ -57,7 +70,7 @@ class View:
         debug_height = bh + self.STATE_HEIGHT 
         ox, oy = self.get_debug_origin_coords(game)
         for i, (turn_number, message) in enumerate(game.log_messages[-debug_height:]):
-            msg = f"{turn_number}. {message}"[:self.DEBUG_WIDTH]
+            msg = f"{turn_number}. {message}"[:self.DEBUG_WIDTH - 1]
             print(self.terminal.move_xy(ox, oy + i) + msg)
 
     def get_layout_graph(self, game):
@@ -91,6 +104,9 @@ class View:
             graph.edges.append(Edge(graph.vertices[6], graph.vertices[7]))
             graph.edges.append(Edge(graph.vertices[3], graph.vertices[7]))
         return graph
+
+    def terminal_size_changed(self):
+        return self.terminal_size != (self.terminal.width, self.terminal.height)
 
     def check_terminal_size(self, game):
         bw, bh = game.board_size

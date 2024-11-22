@@ -97,3 +97,11 @@ class ArrowKeyAgent:
         if game.on_board(position):
             self.position = position
             game.log(f"Position: {self.position}")
+
+class Tombstone:
+    """A placeholder for a missing agent.
+    """
+    def __init__(self, position):
+        self.position = position
+
+    character = ' '

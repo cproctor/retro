@@ -3,6 +3,8 @@ from signal import signal, SIGWINCH
 from time import sleep, perf_counter
 from blessed import Terminal
 from retro.view import View
+from retro.change_dict import ChangeDict
+from retro.agent import Tombstone
 from retro.validation import (
     validate_agent, 
     validate_state,
@@ -50,7 +52,8 @@ class Game:
         self.log_messages = []
         self.agents_by_name = {}
         self.agents = []
-        self.state = validate_state(state)
+        validate_state(state)
+        self.state = ChangeDict(state)
         self.board_size = board_size
         self.debug = debug
         self.framerate = framerate
@@ -66,6 +69,7 @@ class Game:
         terminal = Terminal()
         with terminal.fullscreen(), terminal.hidden_cursor(), terminal.cbreak():
             view = View(terminal, color=self.color)
+            self.agent_positions = {}
             while self.playing:
                 turn_start_time = perf_counter()
                 self.turn_number += 1
@@ -81,7 +85,11 @@ class Game:
                     if getattr(agent, 'display', True):
                         if not self.on_board(agent.position):
                             raise IllegalMove(agent, agent.position)
-                view.render(self)
+                new_agent_positions = self.get_agents_by_position()
+                agent_position_updates = self.get_agent_position_updates(new_agent_positions)
+                view.render(self, agent_position_updates)
+                self.agent_positions = new_agent_positions
+                self.state.changed = False
                 turn_end_time = perf_counter()
                 time_elapsed_in_turn = turn_end_time - turn_start_time
                 time_remaining_in_turn = max(0, 1/self.framerate - time_elapsed_in_turn)
@@ -89,6 +97,35 @@ class Game:
             while True:
                 if terminal.inkey().name in self.EXIT_CHARACTERS:
                     break
+
+    def get_agent_position_updates(self, new_agent_positions):
+        """Compares old and new agent positions, and returns
+        a dict like (x, y) -> agent, with just the positions where the top agent 
+        has changed. For positions which previously held an agent and are now
+        empty, Tombstone is used.
+        """
+        positions = set(self.agent_positions.keys()).union(new_agent_positions.keys())
+        position_diffs = {}
+        for position in positions:
+            old = self.get_top_agent(self.agent_positions.get(position))
+            new = self.get_top_agent(new_agent_positions.get(position))
+            if new and not old:
+                position_diffs[position] = new
+            elif old and not new:
+                position_diffs[position] = Tombstone(position)
+            elif new != old:
+                position_diffs[position] = new
+        return position_diffs
+
+    def get_top_agent(self, agents):
+        """Computes the agent with the highest z value. 
+        This is most useful when you have a list of agents at a position, and 
+        want to know which will be displayed.
+        Returns None when agents is empty.
+        """
+        if agents:
+            agents_with_z = [(getattr(a, 'z', 0), a) for a in agents]
+            return sorted(agents_with_z, reverse=True)[0][1]
 
     def collect_keystrokes(self, terminal):
         keys = set()

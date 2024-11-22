@@ -19,7 +19,7 @@ class AgentNotInGame(GameError):
 
 class IllegalMove(GameError):
     def __init__(self, agent, position):
-        name = agent.name or f"anonymous {agent.__class__.__name__}"
+        name = getattr(agent, "name",  f"anonymous {agent.__class__.__name__}")
         message = f"Agent {name} tried to move to {position}"
         super().__init__(message)
 
