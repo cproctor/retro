@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "retro-games"
-version = "1.0.0"
+version = "1.0.1"
 description = "A simple framework for Terminal-based games"
 authors = ["Chris Proctor <chris@chrisproctor.net>"]
 readme = "README.md"

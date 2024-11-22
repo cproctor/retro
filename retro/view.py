@@ -1,3 +1,4 @@
+from retro.agent import Tombstone
 from retro.graph import Vertex, Edge, Graph
 from retro.errors import TerminalTooSmall
 
@@ -36,7 +37,12 @@ class View:
         origin = self.get_board_origin_coords(game)
         for position, agent in updates.items():
             x, y = vector_add(origin, agent.position)
-            color = self.get_color(agent.color) if hasattr(agent, 'color') else identity
+            if isinstance(agent, Tombstone):
+                color = self.get_color(self.color)
+            elif hasattr(agent, 'color'):
+                color = self.get_color(agent.color)
+            else:
+                color = identity
             print(self.terminal.move_xy(x, y) + color(agent.character))
 
     def render_layout(self, game):
@@ -61,9 +67,10 @@ class View:
     def render_state(self, game):
         bw, bh = game.board_size
         ox, oy = self.get_state_origin_coords(game)
+        color = self.get_color(self.color)
         for i, key in enumerate(sorted(game.state.keys())):
             msg = f"{key}: {game.state[key]}"[:bw]
-            print(self.terminal.move_xy(ox, oy + i) + msg)
+            print(self.terminal.move_xy(ox, oy + i) + color(msg))
 
     def render_debug_log(self, game):
         bw, bh = game.board_size
