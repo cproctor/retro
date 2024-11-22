@@ -77,7 +77,7 @@ class View:
         debug_height = bh + self.STATE_HEIGHT 
         ox, oy = self.get_debug_origin_coords(game)
         for i, (turn_number, message) in enumerate(game.log_messages[-debug_height:]):
-            msg = f"{turn_number}. {message}"[:self.DEBUG_WIDTH - 1]
+            msg = f"{turn_number}. {message}"[:self.DEBUG_WIDTH - 1].ljust(self.DEBUG_WIDTH - 1)
             print(self.terminal.move_xy(ox, oy + i) + msg)
 
     def get_layout_graph(self, game):
