@@ -14,6 +14,7 @@ from retro.validation import (
 from retro.errors import (
     AgentWithNameAlreadyExists,
     AgentNotFoundByName,
+    AgentAlreadyInGame,
     IllegalMove,
 )
 
@@ -160,6 +161,8 @@ class Game:
             agent: An instance of an agent class. 
         """
         validate_agent(agent)
+        if agent in self.agents:
+            raise AgentAlreadyInGame(agent)
         if getattr(agent, "display", True) and not self.on_board(agent.position):
             raise IllegalMove(agent, agent.position)
         if hasattr(agent, "name"): 

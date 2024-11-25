@@ -13,13 +13,19 @@ class AgentNotFoundByName(GameError):
 
 class AgentNotInGame(GameError):
     def __init__(self, agent):
-        name = agent.name or f"anonymous {agent.__class__.__name__}"
+        name = getattr(agent, "name", f"{agent.__class__.__name__}")
         message = f"Agent {name} is not in the game"
+        super().__init__(message)
+
+class AgentAlreadyInGame(GameError):
+    def __init__(self, agent):
+        name = getattr(agent, "name", f"{agent.__class__.__name__}")
+        message = f"Cannot add agent {name} to the game; the agent is already in the game"
         super().__init__(message)
 
 class IllegalMove(GameError):
     def __init__(self, agent, position):
-        name = getattr(agent, "name",  f"anonymous {agent.__class__.__name__}")
+        name = getattr(agent, "name",  f"{agent.__class__.__name__}")
         message = f"Agent {name} tried to move to {position}"
         super().__init__(message)
 
