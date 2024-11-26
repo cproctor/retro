@@ -22,7 +22,7 @@ class View:
         self.color = color
         self.initial_render = True
 
-    def render(self, game, agent_position_updates):
+    def render(self, game):
         if self.initial_render or self.terminal_size_changed():
             self.terminal_size = (self.terminal.width, self.terminal.height)
             self.render_layout(game)
@@ -30,20 +30,45 @@ class View:
             self.render_state(game)
         if game.debug:
             self.render_debug_log(game)
-        self.render_agent_position_updates(game, agent_position_updates)
+        prior_board = self.get_board(game.prior_agent_positions)
+        board = self.get_board(game.agent_positions)
+        diff = self.get_board_diff(prior_board, board)
+        self.render_board(diff, game)
         self.initial_render = False
 
-    def render_agent_position_updates(self, game, updates):
-        origin = self.get_board_origin_coords(game)
-        for position, agent in updates.items():
-            x, y = vector_add(origin, agent.position)
-            if isinstance(agent, Tombstone):
-                color = self.get_color(self.color)
-            elif hasattr(agent, 'color'):
-                color = self.get_color(agent.color)
+    def get_board(self, agent_positions):
+        """Returns a dict of position -> colored_character.
+        """
+        board = {}
+        for position, agents in agent_positions.items():
+            top = sorted(agents, key=lambda a: getattr(a, 'z', 0), reverse=True)[0]
+            if hasattr(top, 'color'):
+                color = self.get_color(top.color)
             else:
                 color = identity
-            print(self.terminal.move_xy(x, y) + color(agent.character))
+            board[position] = color(top.character)
+        return board
+
+    def get_board_diff(self, board0, board1):
+        """Returns a dict of position -> colored_character needed to transform
+        board0 to board 1.
+        """
+        diff = {}
+        positions = set(board0.keys()).union(board1.keys()) 
+        for p in positions: 
+            if p not in board0:
+                diff[p] = board1[p]
+            elif p not in board1:
+                diff[p] = self.get_color(self.color)(' ')
+            elif board0[p] != board1[p]:
+                diff[p] = board1[p]
+        return diff
+
+    def render_board(self, board, game):
+        origin = self.get_board_origin_coords(game)
+        for position, colored_character in board.items():
+            x, y = vector_add(origin, position)
+            print(self.terminal.move_xy(x, y) + colored_character)
 
     def render_layout(self, game):
         bw, bh = game.board_size

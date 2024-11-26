@@ -4,7 +4,6 @@ from time import sleep, perf_counter
 from blessed import Terminal
 from retro.view import View
 from retro.change_dict import ChangeDict
-from retro.agent import Tombstone
 from retro.validation import (
     validate_agent, 
     validate_state,
@@ -77,6 +76,7 @@ class Game:
                 self.keys_pressed = self.collect_keystrokes(terminal)
                 if self.debug and self.keys_pressed:
                     self.log("Keys: " + ', '.join(k.name or str(k) for k in self.keys_pressed))
+                self.prior_agent_positions = self.agent_positions
                 for agent in self.agents:
                     if hasattr(agent, 'handle_keystroke'):
                         for key in self.keys_pressed:
@@ -86,10 +86,8 @@ class Game:
                     if getattr(agent, 'display', True):
                         if not self.on_board(agent.position):
                             raise IllegalMove(agent, agent.position)
-                new_agent_positions = self.get_agents_by_position()
-                agent_position_updates = self.get_agent_position_updates(new_agent_positions)
-                view.render(self, agent_position_updates)
-                self.agent_positions = new_agent_positions
+                self.agent_positions = self.get_agents_by_position()
+                view.render(self)
                 self.state.changed = False
                 turn_end_time = perf_counter()
                 time_elapsed_in_turn = turn_end_time - turn_start_time
@@ -98,34 +96,6 @@ class Game:
             while True:
                 if terminal.inkey().name in self.EXIT_CHARACTERS:
                     break
-
-    def get_agent_position_updates(self, new_agent_positions):
-        """Compares old and new agent positions, and returns
-        a dict like (x, y) -> agent, with just the positions where the top agent 
-        has changed. For positions which previously held an agent and are now
-        empty, Tombstone is used.
-        """
-        positions = set(self.agent_positions.keys()).union(new_agent_positions.keys())
-        position_diffs = {}
-        for position in positions:
-            old = self.get_top_agent(self.agent_positions.get(position))
-            new = self.get_top_agent(new_agent_positions.get(position))
-            if new and not old:
-                position_diffs[position] = new
-            elif old and not new:
-                position_diffs[position] = Tombstone(position)
-            elif new != old:
-                position_diffs[position] = new
-        return position_diffs
-
-    def get_top_agent(self, agents):
-        """Computes the agent with the highest z value. 
-        This is most useful when you have a list of agents at a position, and 
-        want to know which will be displayed.
-        Returns None when agents is empty.
-        """
-        if agents:
-            return sorted(agents, key=lambda a: getattr(a, 'z', 0), reverse=True)[0]
 
     def collect_keystrokes(self, terminal):
         keys = set()
