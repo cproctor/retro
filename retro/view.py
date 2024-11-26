@@ -103,7 +103,8 @@ class View:
         ox, oy = self.get_debug_origin_coords(game)
         for i, (turn_number, message) in enumerate(game.log_messages[-debug_height:]):
             msg = f"{turn_number}. {message}"[:self.DEBUG_WIDTH - 1].ljust(self.DEBUG_WIDTH - 1)
-            print(self.terminal.move_xy(ox, oy + i) + msg)
+            color = self.get_color(self.color)
+            print(self.terminal.move_xy(ox, oy + i) + color(msg))
 
     def get_layout_graph(self, game):
         bw, bh = game.board_size
