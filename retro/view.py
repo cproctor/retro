@@ -60,7 +60,10 @@ class View:
                 diff[p] = board1[p]
             elif p not in board1:
                 diff[p] = self.get_color(self.color)(' ')
-            elif board0[p] != board1[p]:
+            # TODO: We should be able to detect colors changing, but can't.
+            # For now, always re-render positions with agents. Slightly 
+            # inefficient.
+            elif board0[p] != board1[p] or True:
                 diff[p] = board1[p]
         return diff
 
