@@ -27,6 +27,7 @@ class Graph:
             if e == new_edge:
                 new_edge.remove()
                 return e
+        self.edges.append(new_edge)
         return new_edge
 
     def split_edge(self, edge, x, y):
@@ -53,6 +54,16 @@ class Graph:
             v.render(terminal)
         for e in self.edges:
             e.render(terminal)
+
+    def get_layout(self):
+        """Returns a list of (x, y, character)
+        """
+        layout = []
+        for edge in self.edges:
+            layout += edge.get_layout()
+        for vertex in self.vertices:
+            layout += vertex.get_layout()
+        return layout
 
 class Vertex:
     CHARACTERS = {
@@ -104,6 +115,9 @@ class Vertex:
         code = ''.join([str(int(direction)) for direction in [u, r, d, l]])
         return self.CHARACTERS[code]
 
+    def get_layout(self):
+        return [(self.x, self.y, self.get_character())]
+
     def has_up_edge(self):
         return any([v.x == self.x and v.y < self.y for v in self.neighbors()])
 
@@ -144,6 +158,12 @@ class Edge:
         else:
             for y in range(self.begin.y + 1, self.end.y):
                 print(terminal.move_xy(self.begin.x, y) + "║")
+
+    def get_layout(self):
+        if self.is_horizontal():
+            return [(x, self.begin.y, "=") for x in range(self.begin.x, self.end.x)]
+        else:
+            return [(self.begin.x, y, "║") for y in range(self.begin.y, self.end.y)]
 
     def is_horizontal(self):
         return self.begin.y == self.end.y

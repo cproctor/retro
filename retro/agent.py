@@ -9,8 +9,8 @@ class Agent:
     the Agent's methods at the appropriate times. 
 
     Attributes:
-        position: (Required) The character's ``(int, int)`` position on the game
-            board. 
+        position: (Required) The agent's ``(int, int)`` position. The agent
+            will only be displayed is this position is on the board.
         character: (Required unless display is ``False``.) A one-character string 
             which will be displayed at the Agent's position on the game board. 
         name: (Optional) If an agent has a name, it must be unique within the game. 

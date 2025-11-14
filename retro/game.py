@@ -26,7 +26,12 @@ class Game:
     Arguments: 
         agents (list): A list of agents to add to the game. 
         state (dict): A dict containing the game's initial state. 
-        board_size (int, int): (Optional) The two-dimensional size of the game board. D
+        board_size (int, int): (Optional, default `(64, 32)`) The two-dimensional size 
+            of the game board.
+        view_size (int, int): (Optional, default is `board_size`) The two-dimensional size
+            of the view. 
+        view_position (int, int): (Optional) The (x, y) coordinates of the top left corner
+            of the view. By default, this is (0, 0).
         debug (bool): (Optional) Turn on debug mode, showing log messages while playing.
         framerate (int): (Optional) The target number of frames per second at which the 
             game should run.
@@ -47,14 +52,27 @@ class Game:
     STATE_HEIGHT = 5
     EXIT_CHARACTERS = ("KEY_ENTER", "KEY_ESCAPE")
 
-    def __init__(self, agents, state, board_size=(64, 32), debug=False, framerate=24, 
-                 color="white_on_black"):
+    @property
+    def view_position(self):
+        return self._view_position
+
+    @view_position.setter
+    def view_position(self, position):
+        if position != self.view_position:
+            self._view_position = position
+            self.view_position_changed = True
+
+    def __init__(self, agents, state, board_size=(64, 32), view_size=None, 
+            view_position=(0, 0), debug=False, framerate=24, color="white_on_black"):
         self.log_messages = []
         self.agents_by_name = {}
         self.agents = []
         validate_state(state)
         self.state = ChangeDict(state)
         self.board_size = board_size
+        self.view_size = view_size or board_size
+        self._view_position = view_position
+        self.view_position_changed = True
         self.debug = debug
         self.framerate = framerate
         self.turn_number = 0
@@ -70,12 +88,14 @@ class Game:
         with terminal.fullscreen(), terminal.hidden_cursor(), terminal.cbreak():
             view = View(terminal, color=self.color)
             self.agent_positions = {}
+            self.state.changed = True
             while self.playing:
                 turn_start_time = perf_counter()
                 self.turn_number += 1
                 self.keys_pressed = self.collect_keystrokes(terminal)
                 if self.debug and self.keys_pressed:
                     self.log("Keys: " + ', '.join(k.name or str(k) for k in self.keys_pressed))
+                self.prior_view_position = self.view_position
                 self.prior_agent_positions = self.agent_positions
                 for agent in self.agents:
                     if hasattr(agent, 'handle_keystroke'):
@@ -89,6 +109,7 @@ class Game:
                 self.agent_positions = self.get_agents_by_position()
                 view.render(self)
                 self.state.changed = False
+                self.view_position_changed = False
                 turn_end_time = perf_counter()
                 time_elapsed_in_turn = turn_end_time - turn_start_time
                 time_remaining_in_turn = max(0, 1/self.framerate - time_elapsed_in_turn)

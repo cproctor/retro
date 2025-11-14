@@ -26,55 +26,68 @@ class View:
         if self.initial_render or self.terminal_size_changed():
             self.terminal_size = (self.terminal.width, self.terminal.height)
             self.render_layout(game)
-        if self.initial_render or game.state.changed:
+        if game.state.changed:
             self.render_state(game)
         if game.debug:
             self.render_debug_log(game)
-        prior_board = self.get_board(game.prior_agent_positions)
-        board = self.get_board(game.agent_positions)
-        diff = self.get_board_diff(prior_board, board)
-        self.render_board(diff, game)
+        prior_board_view = self.get_board_view(
+            game.prior_agent_positions, 
+            game.prior_view_position, 
+            game.view_size
+        )
+        board_view = self.get_board_view(
+            game.agent_positions, 
+            game.view_position,
+            game.view_size
+        )
+        diff = self.get_board_view_diff(prior_board_view, board_view)
+        self.render_board_view(diff, game)
         self.initial_render = False
 
-    def get_board(self, agent_positions):
+    def get_board_view(self, agent_positions, view_position, view_size):
         """Returns a dict of position -> colored_character.
+        Positions are view coordinates, not board coordinates
         """
-        board = {}
+        vox, voy = view_position
+        vx, vy = view_size
+        board_view = {}
         for position, agents in agent_positions.items():
-            top = sorted(agents, key=lambda a: getattr(a, 'z', 0), reverse=True)[0]
-            if hasattr(top, 'color'):
-                color = self.get_color(top.color)
-            else:
-                color = identity
-            board[position] = color(top.character)
-        return board
+            x, y = position
+            if vox <= x and x < vox + vx and voy <= y and y < voy + vy:
+                top = sorted(agents, key=lambda a: getattr(a, 'z', 0), reverse=True)[0]
+                if hasattr(top, 'color'):
+                    color = self.get_color(top.color)
+                else:
+                    color = identity
+                board_view[(x - vox, y - voy)] = color(top.character)
+        return board_view
 
-    def get_board_diff(self, board0, board1):
+    def get_board_view_diff(self, board_view_0, board_view_1):
         """Returns a dict of position -> colored_character needed to transform
-        board0 to board 1.
+        board_view_0 to board_view_1.
         """
         diff = {}
-        positions = set(board0.keys()).union(board1.keys()) 
+        positions = set(board_view_0.keys()).union(board_view_1.keys()) 
         for p in positions: 
-            if p not in board0:
-                diff[p] = board1[p]
-            elif p not in board1:
+            if p not in board_view_0:
+                diff[p] = board_view_1[p]
+            elif p not in board_view_1:
                 diff[p] = self.get_color(self.color)(' ')
             # TODO: We should be able to detect colors changing, but can't.
             # For now, always re-render positions with agents. Slightly 
             # inefficient.
-            elif board0[p] != board1[p] or True:
-                diff[p] = board1[p]
+            elif board_view_0[p] != board_view_1[p] or True:
+                diff[p] = board_view_1[p]
         return diff
 
-    def render_board(self, board, game):
-        origin = self.get_board_origin_coords(game)
-        for position, colored_character in board.items():
+    def render_board_view(self, board_view, game):
+        origin = self.get_view_origin_coords(game)
+        for position, colored_character in board_view.items():
             x, y = vector_add(origin, position)
             print(self.terminal.move_xy(x, y) + colored_character)
 
     def render_layout(self, game):
-        bw, bh = game.board_size
+        bw, bh = game.view_size
         self.check_terminal_size(game)
         self.clear_screen()
         layout_graph = self.get_layout_graph(game)
@@ -93,16 +106,16 @@ class View:
         return getattr(self.terminal, color_string)
 
     def render_state(self, game):
-        bw, bh = game.board_size
+        vw, vh = game.view_size
         ox, oy = self.get_state_origin_coords(game)
         color = self.get_color(self.color)
         for i, key in enumerate(sorted(game.state.keys())):
-            msg = f"{key}: {game.state[key]}"[:bw]
+            msg = f"{key}: {game.state[key]}"[:vw]
             print(self.terminal.move_xy(ox, oy + i) + color(msg))
 
     def render_debug_log(self, game):
-        bw, bh = game.board_size
-        debug_height = bh + self.STATE_HEIGHT 
+        vw, vh = game.view_size
+        debug_height = vh + self.STATE_HEIGHT 
         ox, oy = self.get_debug_origin_coords(game)
         for i, (turn_number, message) in enumerate(game.log_messages[-debug_height:]):
             msg = f"{turn_number}. {message}"[:self.DEBUG_WIDTH - 1].ljust(self.DEBUG_WIDTH - 1)
@@ -110,17 +123,17 @@ class View:
             print(self.terminal.move_xy(ox, oy + i) + color(msg))
 
     def get_layout_graph(self, game):
-        bw, bh = game.board_size
+        vw, vh = game.view_size
         sh = self.STATE_HEIGHT
-        ox, oy = self.get_board_origin_coords(game)
+        ox, oy = self.get_view_origin_coords(game)
 
         vertices = [
             Vertex(ox - 1, oy - 1), 
-            Vertex(ox + bw, oy - 1),
-            Vertex(ox + bw, oy + bh),
-            Vertex(ox + bw, oy + bh + sh),
-            Vertex(ox - 1, oy + bh + sh),
-            Vertex(ox - 1, oy + bh)
+            Vertex(ox + vw, oy - 1),
+            Vertex(ox + vw, oy + vh),
+            Vertex(ox + vw, oy + vh + sh),
+            Vertex(ox - 1, oy + vh + sh),
+            Vertex(ox - 1, oy + vh)
         ]
         edges = [
             Edge(vertices[0], vertices[1]),
@@ -134,8 +147,8 @@ class View:
         graph = Graph(vertices, edges)
         if game.debug:
             dw = self.DEBUG_WIDTH
-            graph.vertices.append(Vertex(ox + bw + dw, oy - 1))
-            graph.vertices.append(Vertex(ox + bw + dw, oy + bh + sh))
+            graph.vertices.append(Vertex(ox + vw + dw, oy - 1))
+            graph.vertices.append(Vertex(ox + vw + dw, oy + vh + sh))
             graph.edges.append(Edge(graph.vertices[1], graph.vertices[6]))
             graph.edges.append(Edge(graph.vertices[6], graph.vertices[7]))
             graph.edges.append(Edge(graph.vertices[3], graph.vertices[7]))
@@ -145,35 +158,35 @@ class View:
         return self.terminal_size != (self.terminal.width, self.terminal.height)
 
     def check_terminal_size(self, game):
-        bw, bh = game.board_size
-        width_needed = bw + self.BORDER_X
-        height_needed = bh + self.BORDER_Y + self.STATE_HEIGHT
+        vw, vh = game.view_size
+        width_needed = vw + self.BORDER_X
+        height_needed = vh + self.BORDER_Y + self.STATE_HEIGHT
         if self.terminal.width < width_needed:
             raise TerminalTooSmall(width=self.terminal.width, width_needed=width_needed)
         elif self.terminal.height < height_needed:
             raise TerminalTooSmall(height=self.terminal.height, height_needed=height_needed)
 
-    def board_origin(self, game):
-        x, y = self.get_board_origin_coords(game)
+    def view_origin(self, game):
+        x, y = self.get_view_origin_coords(game)
         return self.terminal.move_xy(x, y)
 
-    def get_board_origin_coords(self, game):
-        bw, bh = game.board_size
-        margin_top = (self.terminal.height - bh - self.BORDER_Y) // 2
+    def get_view_origin_coords(self, game):
+        vw, vh = game.view_size
+        margin_top = (self.terminal.height - vh - self.BORDER_Y) // 2
         if game.debug:
-            margin_left = (self.terminal.width - bw - self.DEBUG_WIDTH - self.BORDER_X) // 2
+            margin_left = (self.terminal.width - vw - self.DEBUG_WIDTH - self.BORDER_X) // 2
         else:
-            margin_left = (self.terminal.width - bw - self.BORDER_X) // 2
+            margin_left = (self.terminal.width - vw - self.BORDER_X) // 2
         return margin_left, margin_top
 
     def get_state_origin_coords(self, game):
-        bw, bh = game.board_size
-        ox, oy = self.get_board_origin_coords(game)
-        return ox, oy + bh + 1
+        vw, vh = game.view_size
+        ox, oy = self.get_view_origin_coords(game)
+        return ox, oy + vh + 1
 
     def get_debug_origin_coords(self, game):
-        bw, bh = game.board_size
-        ox, oy = self.get_board_origin_coords(game)
-        return ox + bw + 1, oy
+        vw, vh = game.view_size
+        ox, oy = self.get_view_origin_coords(game)
+        return ox + vw + 1, oy
 
 
