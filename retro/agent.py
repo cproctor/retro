@@ -98,6 +98,32 @@ class ArrowKeyAgent:
             self.position = position
             game.log(f"Position: {self.position}")
 
+class CenterViewAgent:
+    """An agent which centers the game view on the agent.
+    If margin is an integer, then the view will only center
+    when the agent is within `margin` spaces of the edge of the view. 
+    If margin is None (default), the agent will attempt to center
+    the view every turn.
+    """
+    margin = None
+    
+    def play_turn(self, game):
+        super().play_turn(game)
+        # TODO
+
+    def needs_to_center_view(self, game):
+        """Determines whether the view needs to be centered. 
+        """
+        if self.margin is None:
+            return True
+        elif game.
+        return self.margin is None or self.distance_to_edge_of_view() <= self.margin
+
+    def distance_to_edge_of_view(self):
+        """Returns the shortest distance to the edge of the view.
+        """
+
+
 class Tombstone:
     """A placeholder for a missing agent.
     """
