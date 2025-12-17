@@ -8,7 +8,7 @@ class AgentWithNameAlreadyExists(GameError):
 
 class AgentNotFoundByName(GameError):
     def __init__(self, name):
-        message = f"There is no agent named {agent.name} in the game"
+        message = f"There is no agent named {name} in the game"
         super().__init__(message)
 
 class AgentNotInGame(GameError):
