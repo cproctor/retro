@@ -2,10 +2,13 @@
 def validate_agent(agent):
     if hasattr(agent, "name"):
         validate_agent_name(agent.name)
+    name = getattr(agent, "name", agent.__class__.__name__)
     if getattr(agent, 'display', True):
         validate_position(agent.position)
         if not hasattr(agent, "character"):
-            raise ValueError(f"Agent {agent.name} must have a character")
+            raise ValueError(f"Agent {name} must have a character")
+        if not isinstance(getattr(agent, 'z', 0), int):
+            raise ValueError(f"Agent {name} has invalid z value {agent.z}. z-values must be ints")
     return agent
 
 def validate_state(state):

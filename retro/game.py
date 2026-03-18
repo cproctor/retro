@@ -1,10 +1,10 @@
+import json
 from collections import defaultdict
 from signal import signal, SIGWINCH
 from time import sleep, perf_counter
 from blessed import Terminal
 from retro.view import View
 from retro.change_dict import ChangeDict
-from retro.agent import Tombstone
 from retro.validation import (
     validate_agent, 
     validate_state,
@@ -32,6 +32,8 @@ class Game:
         framerate (int): (Optional) The target number of frames per second at which the 
             game should run.
         color (str): (Optional) The game's background color scheme. `Available colors <https://blessed.readthedocs.io/en/latest/colors.html>`_.
+        wait_for_enter (bool): (Optional) If True, the game screen stays open after the game ends until Enter or Escape is pressed. Defaults to False.
+        dump_state (str): (Optional) A filename. If provided, the game state will be saved to that file as JSON when the game ends.
 
     ::
 
@@ -48,8 +50,8 @@ class Game:
     STATE_HEIGHT = 5
     EXIT_CHARACTERS = ("KEY_ENTER", "KEY_ESCAPE")
 
-    def __init__(self, agents, state, board_size=(64, 32), debug=False, framerate=24, 
-                 color="white_on_black"):
+    def __init__(self, agents, state, board_size=(64, 32), debug=False, framerate=24,
+                 color="white_on_black", wait_for_enter=False, dump_state=None):
         self.log_messages = []
         self.agents_by_name = {}
         self.agents = []
@@ -60,6 +62,9 @@ class Game:
         self.framerate = framerate
         self.turn_number = 0
         self.color = color
+        self.wait_for_enter = wait_for_enter
+        self.dump_state = dump_state
+        self._position_cache = None
         for agent in agents:
             self.add_agent(agent)
 
@@ -83,6 +88,7 @@ class Game:
                             agent.handle_keystroke(key, self)
                     if hasattr(agent, 'play_turn'):
                         agent.play_turn(self)
+                        self._position_cache = None
                     if getattr(agent, 'display', True):
                         if not self.on_board(agent.position):
                             raise IllegalMove(agent, agent.position)
@@ -95,10 +101,17 @@ class Game:
                 time_elapsed_in_turn = turn_end_time - turn_start_time
                 time_remaining_in_turn = max(0, 1/self.framerate - time_elapsed_in_turn)
                 sleep(time_remaining_in_turn)
+            if self.dump_state:
+                with open(self.dump_state, 'w') as f:
+                    json.dump(dict(self.state), f)
+            if self.wait_for_enter:
+                while True:
+                    if terminal.inkey().name in self.EXIT_CHARACTERS:
+                        break
 
     def get_agent_position_updates(self, new_agent_positions):
         """Compares old and new agent positions, and returns
-        a dict like (x, y) -> agent, with just the positions where the top agent 
+        a dict like (x, y) -> agent, with just the positions where the top agent
         has changed. For positions which previously held an agent and are now
         empty, Tombstone is used.
         """
@@ -116,8 +129,8 @@ class Game:
         return position_diffs
 
     def get_top_agent(self, agents):
-        """Computes the agent with the highest z value. 
-        This is most useful when you have a list of agents at a position, and 
+        """Computes the agent with the highest z value.
+        This is most useful when you have a list of agents at a position, and
         want to know which will be displayed.
         Returns None when agents is empty.
         """
@@ -198,16 +211,23 @@ class Game:
         return position not in self.get_agents_by_position()
 
     def get_agents_by_position(self):
-        """Returns a dict where each key is a position (e.g. (10, 20)) and 
+        """Returns a dict where each key is a position (e.g. (10, 20)) and
         each value is a list containing all the agents at that position.
         This is useful when an agent needs to find out which other agents are
         on the same space or nearby.
+
+        When called during ``play_turn()``, the dict reflects the board state
+        at the start of the current agent's turn, including any moves made by
+        agents that have already taken their turn this round.
         """
+        if self._position_cache is not None:
+            return self._position_cache
         positions = defaultdict(list)
         for agent in self.agents:
             if getattr(agent, "display", True):
                 validate_position(agent.position)
                 positions[agent.position].append(agent)
+        self._position_cache = positions
         return positions
 
     def remove_agent(self, agent):
