@@ -1,3 +1,4 @@
+import json
 from collections import defaultdict
 from signal import signal, SIGWINCH
 from time import sleep, perf_counter
@@ -31,6 +32,8 @@ class Game:
         framerate (int): (Optional) The target number of frames per second at which the 
             game should run.
         color (str): (Optional) The game's background color scheme. `Available colors <https://blessed.readthedocs.io/en/latest/colors.html>`_.
+        wait_for_enter (bool): (Optional) If True, the game screen stays open after the game ends until Enter or Escape is pressed. Defaults to False.
+        dump_state (str): (Optional) A filename. If provided, the game state will be saved to that file as JSON when the game ends.
 
     ::
 
@@ -47,8 +50,8 @@ class Game:
     STATE_HEIGHT = 5
     EXIT_CHARACTERS = ("KEY_ENTER", "KEY_ESCAPE")
 
-    def __init__(self, agents, state, board_size=(64, 32), debug=False, framerate=24, 
-                 color="white_on_black"):
+    def __init__(self, agents, state, board_size=(64, 32), debug=False, framerate=24,
+                 color="white_on_black", wait_for_enter=False, dump_state=None):
         self.log_messages = []
         self.agents_by_name = {}
         self.agents = []
@@ -59,6 +62,8 @@ class Game:
         self.framerate = framerate
         self.turn_number = 0
         self.color = color
+        self.wait_for_enter = wait_for_enter
+        self.dump_state = dump_state
         for agent in agents:
             self.add_agent(agent)
 
@@ -93,9 +98,13 @@ class Game:
                 time_elapsed_in_turn = turn_end_time - turn_start_time
                 time_remaining_in_turn = max(0, 1/self.framerate - time_elapsed_in_turn)
                 sleep(time_remaining_in_turn)
-            while True:
-                if terminal.inkey().name in self.EXIT_CHARACTERS:
-                    break
+            if self.dump_state:
+                with open(self.dump_state, 'w') as f:
+                    json.dump(dict(self.state), f)
+            if self.wait_for_enter:
+                while True:
+                    if terminal.inkey().name in self.EXIT_CHARACTERS:
+                        break
 
     def collect_keystrokes(self, terminal):
         keys = set()
