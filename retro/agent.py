@@ -101,7 +101,8 @@ class ArrowKeyAgent:
 class Tombstone:
     """A placeholder for a missing agent.
     """
-    def __init__(self, position):
+    def __init__(self, position, color):
         self.position = position
+        self.color = color
 
     character = ' '

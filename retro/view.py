@@ -61,17 +61,19 @@ class View:
     def render_state(self, game):
         bw, bh = game.board_size
         ox, oy = self.get_state_origin_coords(game)
+        color = self.get_color(self.color)
         for i, key in enumerate(sorted(game.state.keys())):
             msg = f"{key}: {game.state[key]}"[:bw]
-            print(self.terminal.move_xy(ox, oy + i) + msg)
+            print(self.terminal.move_xy(ox, oy + i) + color(msg))
 
     def render_debug_log(self, game):
         bw, bh = game.board_size
-        debug_height = bh + self.STATE_HEIGHT 
+        debug_height = bh + self.STATE_HEIGHT
         ox, oy = self.get_debug_origin_coords(game)
+        color = self.get_color(self.color)
         for i, (turn_number, message) in enumerate(game.log_messages[-debug_height:]):
-            msg = f"{turn_number}. {message}"[:self.DEBUG_WIDTH - 1]
-            print(self.terminal.move_xy(ox, oy + i) + msg)
+            msg = f"{turn_number}. {message}"[:self.DEBUG_WIDTH - 1].ljust(self.DEBUG_WIDTH - 1)
+            print(self.terminal.move_xy(ox, oy + i) + color(msg))
 
     def get_layout_graph(self, game):
         bw, bh = game.board_size

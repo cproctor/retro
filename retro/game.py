@@ -14,6 +14,7 @@ from retro.validation import (
 from retro.errors import (
     AgentWithNameAlreadyExists,
     AgentNotFoundByName,
+    AgentAlreadyInGame,
     IllegalMove,
 )
 
@@ -94,9 +95,6 @@ class Game:
                 time_elapsed_in_turn = turn_end_time - turn_start_time
                 time_remaining_in_turn = max(0, 1/self.framerate - time_elapsed_in_turn)
                 sleep(time_remaining_in_turn)
-            while True:
-                if terminal.inkey().name in self.EXIT_CHARACTERS:
-                    break
 
     def get_agent_position_updates(self, new_agent_positions):
         """Compares old and new agent positions, and returns
@@ -112,7 +110,7 @@ class Game:
             if new and not old:
                 position_diffs[position] = new
             elif old and not new:
-                position_diffs[position] = Tombstone(position)
+                position_diffs[position] = Tombstone(position, self.color)
             elif new != old:
                 position_diffs[position] = new
         return position_diffs
@@ -125,7 +123,7 @@ class Game:
         """
         if agents:
             agents_with_z = [(getattr(a, 'z', 0), a) for a in agents]
-            return sorted(agents_with_z, reverse=True)[0][1]
+            return max(agents_with_z)[1]
 
     def collect_keystrokes(self, terminal):
         keys = set()
@@ -161,6 +159,8 @@ class Game:
             agent: An instance of an agent class. 
         """
         validate_agent(agent)
+        if agent in self.agents:
+            raise AgentAlreadyInGame(agent)
         if getattr(agent, "display", True) and not self.on_board(agent.position):
             raise IllegalMove(agent, agent.position)
         if hasattr(agent, "name"): 
