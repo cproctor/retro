@@ -64,6 +64,7 @@ class Game:
         self.color = color
         self.wait_for_enter = wait_for_enter
         self.dump_state = dump_state
+        self._position_cache = None
         for agent in agents:
             self.add_agent(agent)
 
@@ -88,6 +89,7 @@ class Game:
                             agent.handle_keystroke(key, self)
                     if hasattr(agent, 'play_turn'):
                         agent.play_turn(self)
+                        self._position_cache = None
                     if getattr(agent, 'display', True):
                         if not self.on_board(agent.position):
                             raise IllegalMove(agent, agent.position)
@@ -179,16 +181,23 @@ class Game:
         return position not in self.get_agents_by_position()
 
     def get_agents_by_position(self):
-        """Returns a dict where each key is a position (e.g. (10, 20)) and 
+        """Returns a dict where each key is a position (e.g. (10, 20)) and
         each value is a list containing all the agents at that position.
         This is useful when an agent needs to find out which other agents are
         on the same space or nearby.
+
+        When called during ``play_turn()``, the dict reflects the board state
+        at the start of the current agent's turn, including any moves made by
+        agents that have already taken their turn this round.
         """
+        if self._position_cache is not None:
+            return self._position_cache
         positions = defaultdict(list)
         for agent in self.agents:
             if getattr(agent, "display", True):
                 validate_position(agent.position)
                 positions[agent.position].append(agent)
+        self._position_cache = positions
         return positions
 
     def remove_agent(self, agent):
