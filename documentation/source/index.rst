@@ -41,6 +41,7 @@ Object-Oriented Programming.
    :maxdepth: 2
 
    introduction
+   advanced
    pedagogy
    api/index
 
