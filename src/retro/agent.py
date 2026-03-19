@@ -76,7 +76,8 @@ class ArrowKeyAgent:
     z = 0
 
     def play_turn(self, game):
-        pass
+        if hasattr(super(), 'play_turn'):
+            super().play_turn(game)
 
     def handle_keystroke(self, keystroke, game):
         """Moves the agent's position if the keystroke is one of the arrow keys.
@@ -114,7 +115,8 @@ class CenterViewAgent:
     margin = None
 
     def play_turn(self, game):
-        super().play_turn(game)
+        if hasattr(super(), 'play_turn'):
+            super().play_turn(game)
         if self.needs_to_center_view(game):
             self.center_view(game)
 
