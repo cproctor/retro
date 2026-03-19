@@ -15,9 +15,9 @@ class Graph:
         for e in self.edges:
             if e.crosses(x, y):
                 return self.split_edge(e, x, y)
-        v = Vertex(x, y)
-        self.vertices.append(v)
-        return v
+        new_vertex = Vertex(x, y)
+        self.vertices.append(new_vertex)
+        return new_vertex
 
     def get_or_create_edge(self, x0, y0, x1, y1):
         v0 = self.get_or_create_vertex(x0, y0)
@@ -41,6 +41,7 @@ class Graph:
         self.vertices.append(v)
         self.edges.append(Edge(edge.begin, v))
         self.edges.append(Edge(v, edge.end))
+        return v
 
     def remove_edge(self, edge):
         if edge not in self.edges:
@@ -64,6 +65,13 @@ class Graph:
         for vertex in self.vertices:
             layout += vertex.get_layout()
         return layout
+
+    def get_agents(self):
+        "Return agents corresponding to this Graph, for use in-game."
+        agents = [v.get_agent() for v in self.vertices]
+        for e in self.edges:
+            agents += e.get_agents()
+        return agents
 
 class Vertex:
     CHARACTERS = {
@@ -106,6 +114,9 @@ class Vertex:
 
     def render(self, terminal):
         print(terminal.move_xy(self.x, self.y) + self.get_character())
+
+    def get_agent(self):
+        return GraphAgent(self.get_character(), (self.x, self.y))
 
     def get_character(self):
         u = self.has_up_edge()
@@ -165,6 +176,12 @@ class Edge:
         else:
             return [(self.begin.x, y, "║") for y in range(self.begin.y, self.end.y)]
 
+    def get_agents(self):
+        if self.is_horizontal():
+            return [GraphAgent("=", (i, self.begin.y)) for i in range(self.begin.x + 1, self.end.x)]
+        else:
+            return [GraphAgent("║", (self.begin.x, j)) for j in range(self.begin.y + 1, self.end.y)]
+
     def is_horizontal(self):
         return self.begin.y == self.end.y
 
@@ -180,3 +197,13 @@ class Edge:
     def remove(self):
         self.begin.edges.remove(self)
         self.end.edges.remove(self)
+
+class GraphAgent:
+    """An agent class for graph characters.
+    """
+    def __init__(self, character, position):
+        self.character = character
+        self.position = position
+
+    def __repr__(self):
+        return f"<GraphAgent {self.character} {self.position}>"

@@ -8,7 +8,7 @@ class AgentWithNameAlreadyExists(GameError):
 
 class AgentNotFoundByName(GameError):
     def __init__(self, name):
-        message = f"There is no agent named {agent.name} in the game"
+        message = f"There is no agent named {name} in the game"
         super().__init__(message)
 
 class AgentNotInGame(GameError):
@@ -38,10 +38,11 @@ class TerminalTooSmall(GameError):
     STATE_HEIGHT = 5
 
     def __init__(self, width=None, width_needed=None, height=None, height_needed=None):
-        if width is not None and width_needed is not None and width_needed < width:
+        if width is not None and width_needed is not None and width < width_needed:
             err = f"The terminal width ({width}) is less than the required {width_needed}."
             super().__init__(err)
-        elif height is not None and height_needed is not None and height_needed < height:
+        elif height is not None and height_needed is not None and height < height_needed:
             err = f"The terminal height ({height}) is less than the required {height_needed}."
+            super().__init__(err)
         else:
             raise ValueError(f"TerminalTooSmall called with illegal values.")

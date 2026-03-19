@@ -30,12 +30,12 @@ class View:
         if game.debug:
             self.render_debug_log(game)
         prior_board_view = self.get_board_view(
-            game.prior_agent_positions, 
-            game.prior_view_position, 
+            game.prior_agent_positions,
+            game.prior_view_position,
             game.view_size
         )
         board_view = self.get_board_view(
-            game.agent_positions, 
+            game.agent_positions,
             game.view_position,
             game.view_size
         )
@@ -44,20 +44,17 @@ class View:
         self.initial_render = False
 
     def get_board_view(self, agent_positions, view_position, view_size):
-        """Returns a dict of position -> colored_character.
-        Positions are view coordinates, not board coordinates
+        """Returns a dict of view-coordinate position -> colored_character,
+        containing only the agents visible within the viewport.
         """
         vox, voy = view_position
         vx, vy = view_size
         board_view = {}
         for position, agents in agent_positions.items():
             x, y = position
-            if vox <= x and x < vox + vx and voy <= y and y < voy + vy:
-                top = sorted(agents, key=lambda a: getattr(a, 'z', 0), reverse=True)[0]
-                if hasattr(top, 'color'):
-                    color = self.get_color(top.color)
-                else:
-                    color = identity
+            if vox <= x < vox + vx and voy <= y < voy + vy:
+                top = max(agents, key=lambda a: getattr(a, 'z', 0))
+                color = self.get_color(top.color) if hasattr(top, 'color') else identity
                 board_view[(x - vox, y - voy)] = color(top.character)
         return board_view
 
@@ -66,16 +63,13 @@ class View:
         board_view_0 to board_view_1.
         """
         diff = {}
-        positions = set(board_view_0.keys()).union(board_view_1.keys()) 
-        for p in positions: 
+        positions = set(board_view_0.keys()).union(board_view_1.keys())
+        for p in positions:
             if p not in board_view_0:
                 diff[p] = board_view_1[p]
             elif p not in board_view_1:
                 diff[p] = self.get_color(self.color)(' ')
-            # TODO: We should be able to detect colors changing, but can't.
-            # For now, always re-render positions with agents. Slightly 
-            # inefficient.
-            elif board_view_0[p] != board_view_1[p] or True:
+            elif board_view_0[p] != board_view_1[p]:
                 diff[p] = board_view_1[p]
         return diff
 
@@ -114,11 +108,11 @@ class View:
 
     def render_debug_log(self, game):
         vw, vh = game.view_size
-        debug_height = vh + self.STATE_HEIGHT 
+        debug_height = vh + self.STATE_HEIGHT
         ox, oy = self.get_debug_origin_coords(game)
+        color = self.get_color(self.color)
         for i, (turn_number, message) in enumerate(game.log_messages[-debug_height:]):
             msg = f"{turn_number}. {message}"[:self.DEBUG_WIDTH - 1].ljust(self.DEBUG_WIDTH - 1)
-            color = self.get_color(self.color)
             print(self.terminal.move_xy(ox, oy + i) + color(msg))
 
     def get_layout_graph(self, game):
