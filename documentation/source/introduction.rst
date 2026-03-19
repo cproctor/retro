@@ -277,3 +277,4 @@ a few more details to make the game look nicer. Read
    nav_v1
    nav
    snake
+   large_boards

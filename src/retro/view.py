@@ -53,7 +53,7 @@ class View:
         for position, agents in agent_positions.items():
             x, y = position
             if vox <= x < vox + vx and voy <= y < voy + vy:
-                top = max(agents, key=lambda a: getattr(a, 'z', 0))
+                top = max(agents, key=lambda a: getattr(a, 'z', 0) or 0)
                 color = self.get_color(top.color) if hasattr(top, 'color') else identity
                 board_view[(x - vox, y - voy)] = color(top.character)
         return board_view
