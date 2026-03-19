@@ -76,7 +76,11 @@ The game runs as a series of turns. Each turn:
 * Then the game draws the board, displaying each agent's character at its position, 
   in its color. The game also prints out its current state. 
 
-The game ends once :py:meth:`retro.game.Game.end` is called.
+The game ends once :py:meth:`retro.game.Game.end` is called. By default, the game exits
+immediately when it ends. To keep the game screen open until the player presses Enter or
+Escape, pass ``wait_for_enter=True`` when creating the :py:class:`~retro.game.Game`.
+To save the final game state to a file when the game ends, pass a filename as
+``dump_state``; the state will be written as JSON.
 
 Agents
 ++++++
@@ -273,3 +277,5 @@ a few more details to make the game look nicer. Read
    nav_v1
    nav
    snake
+   large_boards
+   agent_size

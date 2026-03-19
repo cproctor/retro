@@ -9,8 +9,8 @@ class Agent:
     the Agent's methods at the appropriate times. 
 
     Attributes:
-        position: (Required) The character's ``(int, int)`` position on the game
-            board. 
+        position: (Required) The agent's ``(int, int)`` position. The agent
+            will only be displayed is this position is on the board.
         character: (Required unless display is ``False``.) A one-character string 
             which will be displayed at the Agent's position on the game board. 
         name: (Optional) If an agent has a name, it must be unique within the game. 
@@ -22,10 +22,13 @@ class Agent:
             board. This is useful when you want to create an agent which will be displayed
             later, or when you want to create an agent which acts on the Game indirectly, 
             for example by spawning other Agents. Defaults to True.
-        z: (Optional) When multiple Agents have the same position on the board, the 
-            Agent with the highest ``z`` value will be displayed. 
-            The Game is played on a two-dimensional (x, y) board, but you can think of 
+        z: (Optional) When multiple Agents have the same position on the board, the
+            Agent with the highest ``z`` value will be displayed.
+            The Game is played on a two-dimensional (x, y) board, but you can think of
             ``z`` as a third "up" dimension. Defaults to 0.
+        size: (Optional) A ``(width, height)`` tuple declaring how many cells this
+            agent occupies on the board. When set, ``character`` may be a list of
+            strings, one per row. Defaults to ``(1, 1)``.
     """
     character = "*"
     position = (0, 0)
@@ -97,3 +100,65 @@ class ArrowKeyAgent:
         if game.on_board(position):
             self.position = position
             game.log(f"Position: {self.position}")
+
+class CenterViewAgent:
+    """An agent which centers the game view on the agent.
+    If margin is an integer, then the view will only re-center
+    when the agent is within ``margin`` spaces of the edge of the view.
+    If margin is None (default), the view re-centers every turn.
+
+    Attributes:
+        margin (int or None): Distance from the viewport edge that triggers
+            re-centering. Defaults to None (always re-center).
+    """
+    margin = None
+
+    def play_turn(self, game):
+        super().play_turn(game)
+        if self.needs_to_center_view(game):
+            self.center_view(game)
+
+    def center_view(self, game):
+        """Centers the game view on this agent.
+
+        Arguments:
+            game (Game): The current game.
+        """
+        vw, vh = game.view_size
+        bw, bh = game.board_size
+        x, y = self.position
+        new_x = max(0, min(x - vw // 2, bw - vw))
+        new_y = max(0, min(y - vh // 2, bh - vh))
+        game.view_position = (new_x, new_y)
+
+    def needs_to_center_view(self, game):
+        """Returns True if the view should be re-centered this turn.
+
+        Arguments:
+            game (Game): The current game.
+        """
+        if self.margin is None:
+            return True
+        return self.distance_to_edge_of_view(game) <= self.margin
+
+    def distance_to_edge_of_view(self, game):
+        """Returns the shortest distance from this agent to any edge of the
+        current view.
+
+        Arguments:
+            game (Game): The current game.
+        """
+        x, y = self.position
+        vox, voy = game.view_position
+        vw, vh = game.view_size
+        return min(x - vox, vox + vw - 1 - x, y - voy, voy + vh - 1 - y)
+
+
+class Tombstone:
+    """A placeholder for a missing agent.
+    """
+    def __init__(self, position, color):
+        self.position = position
+        self.color = color
+
+    character = ' '
