@@ -29,6 +29,16 @@ class IllegalMove(GameError):
         message = f"Agent {name} tried to move to {position}"
         super().__init__(message)
 
+class AgentCharacterTooLarge(GameError):
+    def __init__(self, agent, size, char_size):
+        name = getattr(agent, "name", agent.__class__.__name__)
+        message = (
+            f"Agent {name} has size {size} but its character grid is "
+            f"{char_size[0]} wide and {char_size[1]} tall, "
+            f"which exceeds its declared size."
+        )
+        super().__init__(message)
+
 class GraphError(GameError):
     pass
 

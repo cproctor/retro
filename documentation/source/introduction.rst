@@ -278,3 +278,4 @@ a few more details to make the game look nicer. Read
    nav
    snake
    large_boards
+   agent_size

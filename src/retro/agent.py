@@ -22,10 +22,13 @@ class Agent:
             board. This is useful when you want to create an agent which will be displayed
             later, or when you want to create an agent which acts on the Game indirectly, 
             for example by spawning other Agents. Defaults to True.
-        z: (Optional) When multiple Agents have the same position on the board, the 
-            Agent with the highest ``z`` value will be displayed. 
-            The Game is played on a two-dimensional (x, y) board, but you can think of 
+        z: (Optional) When multiple Agents have the same position on the board, the
+            Agent with the highest ``z`` value will be displayed.
+            The Game is played on a two-dimensional (x, y) board, but you can think of
             ``z`` as a third "up" dimension. Defaults to 0.
+        size: (Optional) A ``(width, height)`` tuple declaring how many cells this
+            agent occupies on the board. When set, ``character`` may be a list of
+            strings, one per row. Defaults to ``(1, 1)``.
     """
     character = "*"
     position = (0, 0)

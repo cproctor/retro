@@ -3,6 +3,25 @@ from retro.errors import TerminalTooSmall
 
 identity = lambda x: x
 
+def get_agent_character(agent, position):
+    """Returns the character to display for an agent at the given board position.
+    For agents with a size and a multi-row character grid, returns the
+    appropriate character for that specific cell.
+    """
+    char = agent.character
+    if isinstance(char, str) or not hasattr(agent, 'size'):
+        return char
+    ax, ay = agent.position
+    x, y = position
+    dx, dy = x - ax, y - ay
+    rows = list(char)
+    if dy >= len(rows):
+        return ' '
+    row = rows[dy]
+    if dx >= len(row):
+        return ' '
+    return row[dx]
+
 def vector_add(vec0, vec1):
     "Adds two vectors."
     x0, y0 = vec0
@@ -55,7 +74,7 @@ class View:
             if vox <= x < vox + vx and voy <= y < voy + vy:
                 top = max(agents, key=lambda a: getattr(a, 'z', 0) or 0)
                 color = self.get_color(top.color) if hasattr(top, 'color') else identity
-                board_view[(x - vox, y - voy)] = color(top.character)
+                board_view[(x - vox, y - voy)] = color(get_agent_character(top, (x, y)))
         return board_view
 
     def get_board_view_diff(self, board_view_0, board_view_1):

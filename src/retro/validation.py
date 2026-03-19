@@ -9,7 +9,30 @@ def validate_agent(agent):
             raise ValueError(f"Agent {name} must have a character")
         if not isinstance(getattr(agent, 'z', 0), int):
             raise ValueError(f"Agent {name} has invalid z value {agent.z}. z-values must be ints")
+        validate_agent_size(agent)
     return agent
+
+def validate_agent_size(agent):
+    from retro.errors import AgentCharacterTooLarge
+    size = getattr(agent, 'size', None)
+    if size is None:
+        return
+    name = getattr(agent, "name", agent.__class__.__name__)
+    if (not isinstance(size, tuple) or len(size) != 2
+            or not isinstance(size[0], int) or not isinstance(size[1], int)
+            or size[0] < 1 or size[1] < 1):
+        raise ValueError(
+            f"Agent {name} has invalid size {size}. "
+            f"size must be a tuple of two positive integers, e.g. (3, 2)."
+        )
+    char = agent.character
+    if not isinstance(char, str):
+        rows = list(char)
+        char_height = len(rows)
+        char_width = max((len(row) for row in rows), default=0)
+        w, h = size
+        if char_height > h or char_width > w:
+            raise AgentCharacterTooLarge(agent, size, (char_width, char_height))
 
 def validate_state(state):
     if not isinstance(state, dict):

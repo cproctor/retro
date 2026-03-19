@@ -19,6 +19,16 @@ from retro.errors import (
     IllegalMove,
 )
 
+def agent_occupied_positions(agent):
+    """Returns all board positions occupied by an agent."""
+    x, y = agent.position
+    size = getattr(agent, 'size', None)
+    if size is None:
+        return [(x, y)]
+    w, h = size
+    return [(x + dx, y + dy) for dy in range(h) for dx in range(w)]
+
+
 class Game:
     """
     Creates a playable game.
@@ -113,8 +123,9 @@ class Game:
                         agent.play_turn(self)
                         self._position_cache = None
                     if getattr(agent, 'display', True):
-                        if not self.on_board(agent.position):
-                            raise IllegalMove(agent, agent.position)
+                        for pos in agent_occupied_positions(agent):
+                            if not self.on_board(pos):
+                                raise IllegalMove(agent, pos)
                 self.agent_positions = self.get_agents_by_position()
                 view.render(self)
                 self.state.changed = False
@@ -167,8 +178,10 @@ class Game:
         validate_agent(agent)
         if agent in self.agents:
             raise AgentAlreadyInGame(agent)
-        if getattr(agent, "display", True) and not self.on_board(agent.position):
-            raise IllegalMove(agent, agent.position)
+        if getattr(agent, "display", True):
+            for pos in agent_occupied_positions(agent):
+                if not self.on_board(pos):
+                    raise IllegalMove(agent, pos)
         if hasattr(agent, "name"): 
             if agent.name in self.agents_by_name:
                 raise AgentWithNameAlreadyExists(agent.name)
@@ -219,7 +232,8 @@ class Game:
         for agent in self.agents:
             if getattr(agent, "display", True):
                 validate_position(agent.position)
-                positions[agent.position].append(agent)
+                for pos in agent_occupied_positions(agent):
+                    positions[pos].append(agent)
         self._position_cache = positions
         return positions
 
