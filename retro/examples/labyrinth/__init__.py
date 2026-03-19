@@ -1,4 +1,5 @@
 from retro.game import Game
+from retro.examples.labyrinth.goal import Goal
 from retro.examples.labyrinth.maze import Maze
 from retro.examples.labyrinth.player import Player
 

@@ -1,4 +1,3 @@
-from retro.agent import Tombstone
 from retro.graph import Vertex, Edge, Graph
 from retro.errors import TerminalTooSmall
 
@@ -26,7 +25,7 @@ class View:
         if self.initial_render or self.terminal_size_changed():
             self.terminal_size = (self.terminal.width, self.terminal.height)
             self.render_layout(game)
-        if game.state.changed:
+        if self.initial_render or game.state.changed:
             self.render_state(game)
         if game.debug:
             self.render_debug_log(game)
