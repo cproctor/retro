@@ -45,11 +45,12 @@ class Game:
         view_position (int, int): (Optional) The (x, y) coordinates of the top left corner
             of the view. By default, this is (0, 0).
         debug (bool): (Optional) Turn on debug mode, showing log messages while playing.
-        framerate (int): (Optional) The target number of frames per second at which the 
+        framerate (int): (Optional) The target number of frames per second at which the
             game should run.
         color (str): (Optional) The game's background color scheme. `Available colors <https://blessed.readthedocs.io/en/latest/colors.html>`_.
         wait_for_enter (bool): (Optional) If True, the game screen stays open after the game ends until Enter or Escape is pressed. Defaults to False.
         dump_state (str): (Optional) A filename. If provided, the game state will be saved to that file as JSON when the game ends.
+        log_file (str): (Optional) A filename. If provided, all log messages are written to this file in real time, regardless of whether debug mode is on. The file is cleared at the start of each run. This is useful for external programs that need to monitor game events (e.g. to trigger sound effects) without access to stdout, which is used by the terminal display.
 
     ::
 
@@ -78,7 +79,7 @@ class Game:
 
     def __init__(self, agents, state, board_size=(64, 32), view_size=None,
             view_position=(0, 0), debug=False, framerate=24, color="white_on_black",
-            wait_for_enter=False, dump_state=None):
+            wait_for_enter=False, dump_state=None, log_file=None):
         self.log_messages = []
         self.agents_by_name = {}
         self.agents = []
@@ -94,6 +95,9 @@ class Game:
         self.color = color
         self.wait_for_enter = wait_for_enter
         self.dump_state = dump_state
+        self.log_file = log_file
+        if log_file:
+            open(log_file, 'w').close()
         self._position_cache = None
         for agent in agents:
             self.add_agent(agent)
@@ -153,14 +157,17 @@ class Game:
         return keys
 
     def log(self, message):
-        """Write a log message. 
-        Log messages are only shown when debug mode is on. 
-        They can be very useful for debugging.
+        """Write a log message.
+        Log messages are shown on screen when debug mode is on. When ``log_file``
+        is set, messages are also written to that file regardless of debug mode.
 
         Arguments:
             message (str): The message to log.
         """
         self.log_messages.append((self.turn_number, message))
+        if self.log_file:
+            with open(self.log_file, 'a') as f:
+                f.write(f"{self.turn_number}: {message}\n")
 
     def end(self):
         """Ends the game. No more turns will run.
