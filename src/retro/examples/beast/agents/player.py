@@ -11,6 +11,7 @@ class Player:
     character = "*"
     color = "white"
     name = "player"
+    deadly = False
 
     def __init__(self, position):
         self.position = position
@@ -40,5 +41,6 @@ class Player:
     def die(self, game):
         self.color = "black_on_red"
         game.state["message"] = "The beasties win!"
+        game.state['score'] -= 10
         game.end()
 

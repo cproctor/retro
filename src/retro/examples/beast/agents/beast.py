@@ -24,6 +24,11 @@ class Beast:
             return False
 
     def play_turn(self, game):
+        player = game.get_agent_by_name("player")
+        if player and player.position in self.get_adjacent_positions():
+            self.position = player.position
+            player.die(game)
+            return
         if self.should_move():
             possible_moves = []
             for position in self.get_adjacent_positions():
@@ -34,9 +39,6 @@ class Beast:
                     self.position = choice(possible_moves)
                 else:
                     self.position = self.choose_best_move(possible_moves, game)
-            player = game.get_agent_by_name("player")
-            if player.position == self.position:
-                player.die()
 
     def get_adjacent_positions(self):
         """Returns a list of all adjacent positions, including diagonals
@@ -63,6 +65,7 @@ class Beast:
     def die(self, game):
         game.remove_agent(self)
         game.num_beasts -= 1
+        game.state['score'] += 1
         if game.num_beasts == 0:
             game.state["message"] = "You win!"
             game.end()

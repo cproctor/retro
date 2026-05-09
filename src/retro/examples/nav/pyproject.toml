@@ -1,0 +1,6 @@
+[tool.retro-gamer]
+actions = ["KEY_LEFT", "KEY_RIGHT"]
+reward = "score"
+character_set = ["^", "O"]
+spatial = true
+observe_state = []

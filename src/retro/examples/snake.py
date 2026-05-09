@@ -95,19 +95,26 @@ class SnakeHead:
         """
         x, y = self.position
         dx, dy = self.direction
-        if self.can_move((x+dx, y+dy), game):
-            self.position = (x+dx, y+dy)
+        next_pos = (x + dx, y + dy)
+        if self.can_move(next_pos, game):
+            apple = game.get_agent_by_name("Apple")
+            ax, ay = apple.position
+            if abs(next_pos[0] - ax) + abs(next_pos[1] - ay) > abs(x - ax) + abs(y - ay):
+                game.state['score'] -= 1
+            self.position = next_pos
             if self.is_on_apple(self.position, game):
-                apple = game.get_agent_by_name("Apple")
                 apple.relocate(game)
                 self.growing = True
+                game.state['score'] += 50
             if self.next_segment:
                 self.next_segment.move((x, y), game, growing=self.growing)
             elif self.growing:
                 self.next_segment = SnakeBodySegment(1, (x, y))
                 game.add_agent(self.next_segment)
-                game.state['score'] += 1
             self.growing = False
+        else:
+            game.state['score'] -= 10
+            game.end()
 
     def handle_keystroke(self, keystroke, game):
         """Checks whether one of the arrow keys has been pressed. 
@@ -187,12 +194,16 @@ class SnakeBodySegment:
         elif growing:
             self.next_segment = SnakeBodySegment(self.segment_id + 1, old_position)
             game.add_agent(self.next_segment)
-            game.state['score'] += self.segment_id + 1
 
-if __name__ == '__main__':
+def create_game():
+    """Return a fresh, initialized Snake game."""
     head = SnakeHead()
     apple = Apple()
-    game = Game([head, apple], {'score': 0}, board_size=(32, 16), framerate=12)
+    game = Game([head, apple], {'score': 100}, board_size=(32, 16), framerate=12)
     apple.relocate(game)
-    game.play()
+    return game
+
+
+if __name__ == '__main__':
+    create_game().play()
 

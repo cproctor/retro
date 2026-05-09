@@ -1,6 +1,6 @@
 [project]
 name = "retro-games"
-version = "2.2.0"
+version = "2.3.0"
 description = "A simple framework for Terminal-based games"
 authors = [{ name = "Chris Proctor", email = "chris@chrisproctor.net>" }]
 readme = "README.md"
@@ -17,6 +17,13 @@ module-name = "retro"
 [build-system]
 requires = ["uv_build>=0.10.0,<0.11.0"]
 build-backend = "uv_build"
+
+[tool.retro-gamer]
+actions = ["KEY_RIGHT", "KEY_UP", "KEY_LEFT", "KEY_DOWN"]
+reward = "score"
+character_set = ["@", "*", ">", "<", "^", "v"]
+spatial = true
+observe_state = []
 
 [dependency-groups]
 documentation = [

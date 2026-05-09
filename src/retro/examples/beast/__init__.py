@@ -5,8 +5,13 @@ WIDTH = 40
 HEIGHT = 20
 NUM_BEASTS = 10
 
-board = Board(WIDTH, HEIGHT, num_beasts=NUM_BEASTS)
-state = {}
-game = Game(board.get_agents(), state, board_size=(WIDTH, HEIGHT))
-game.num_beasts = NUM_BEASTS
-game.play()
+def create_game():
+    """Return a fresh, initialized Beast game."""
+    board = Board(WIDTH, HEIGHT, num_beasts=NUM_BEASTS)
+    state = {'score': 0}
+    game = Game(board.get_agents(), state, board_size=(WIDTH, HEIGHT))
+    game.num_beasts = NUM_BEASTS
+    return game
+
+if __name__ == '__main__':
+    create_game().play()
