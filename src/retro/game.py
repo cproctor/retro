@@ -3,11 +3,12 @@ from collections import defaultdict
 from signal import signal, SIGWINCH
 from time import sleep, perf_counter
 from blessed import Terminal
-from retro.view import View
+from retro.views.terminal import TerminalView
+from retro.input import TerminalInput
 from retro.change_dict import ChangeDict
 from retro.agent import Tombstone
 from retro.validation import (
-    validate_agent, 
+    validate_agent,
     validate_state,
     validate_agent_name,
     validate_position,
@@ -18,6 +19,7 @@ from retro.errors import (
     AgentAlreadyInGame,
     IllegalMove,
 )
+
 
 def agent_occupied_positions(agent):
     """Returns all board positions occupied by an agent."""
@@ -32,38 +34,53 @@ def agent_occupied_positions(agent):
 class Game:
     """
     Creates a playable game.
-    You will use Game to create games, but don't need to read or understand how
-    this class works. The main work in creating a 
 
-    Arguments: 
-        agents (list): A list of agents to add to the game. 
-        state (dict): A dict containing the game's initial state. 
-        board_size (int, int): (Optional, default `(64, 32)`) The two-dimensional size 
+    Arguments:
+        agents (list): A list of agents to add to the game.
+        state (dict): A dict containing the game's initial state.
+        board_size (int, int): (Optional, default ``(64, 32)``) The two-dimensional size
             of the game board.
-        view_size (int, int): (Optional, default is `board_size`) The two-dimensional size
-            of the view. 
+        view_size (int, int): (Optional, default is ``board_size``) The two-dimensional size
+            of the view.
         view_position (int, int): (Optional) The (x, y) coordinates of the top left corner
             of the view. By default, this is (0, 0).
         debug (bool): (Optional) Turn on debug mode, showing log messages while playing.
         framerate (int): (Optional) The target number of frames per second at which the
             game should run.
-        color (str): (Optional) The game's background color scheme. `Available colors <https://blessed.readthedocs.io/en/latest/colors.html>`_.
-        wait_for_enter (bool): (Optional) If True, the game screen stays open after the game ends until Enter or Escape is pressed. Defaults to False.
-        dump_state (str): (Optional) A filename. If provided, the game state will be saved to that file as JSON when the game ends.
-        log_file (str): (Optional) A filename. If provided, all log messages are written to this file in real time, regardless of whether debug mode is on. The file is cleared at the start of each run. This is useful for external programs that need to monitor game events (e.g. to trigger sound effects) without access to stdout, which is used by the terminal display.
+        color (str): (Optional) The game's background color scheme.
+        wait_for_enter (bool): (Optional) If True, the game screen stays open after the
+            game ends until Enter or Escape is pressed. Defaults to False.
+        dump_state (str): (Optional) A filename. If provided, the game state will be saved
+            to that file as JSON when the game ends.
+        log_file (str): (Optional) A filename. If provided, all log messages are written
+            to this file in real time.
+        input_source: (Optional) An :class:`retro.input.InputSource` instance. When
+            provided, ``step()`` uses it for input instead of the terminal. Ignored by
+            ``play()``, which always uses terminal input.
+        view: (Optional) A view instance (implements ``on_game_start`` and ``render``).
+            When provided, ``step()`` calls ``view.render(self)`` after each turn.
+            Ignored by ``play()``, which manages its own :class:`retro.views.TerminalView`.
 
     ::
 
-        # This example will create a simple game.
+        # Standard interactive play:
         from retro.game import Game
         from retro.agent import ArrowKeyAgent
-
-        agents = [ArrowKeyAgent()]
-        state = {}
-        game = Game(agents, state)
+        game = Game([ArrowKeyAgent()], {})
         game.play()
-        
+
+        # Programmatic stepping (e.g. for training):
+        from retro.input import ProgrammaticInput
+        from retro.views import HeadlessView
+        inp = ProgrammaticInput()
+        view = HeadlessView()
+        game = Game([MyAgent()], {'score': 0}, input_source=inp, view=view)
+        game.start()
+        inp.press('KEY_RIGHT')
+        game.step()
+        board = view.board_characters
     """
+
     STATE_HEIGHT = 5
     EXIT_CHARACTERS = ("KEY_ENTER", "KEY_ESCAPE")
 
@@ -78,8 +95,9 @@ class Game:
             self.view_position_changed = True
 
     def __init__(self, agents, state, board_size=(64, 32), view_size=None,
-            view_position=(0, 0), debug=False, framerate=24, color="white_on_black",
-            wait_for_enter=False, dump_state=None, log_file=None):
+                 view_position=(0, 0), debug=False, framerate=24, color="white_on_black",
+                 wait_for_enter=False, dump_state=None, log_file=None,
+                 input_source=None, view=None):
         self.log_messages = []
         self.agents_by_name = {}
         self.agents = []
@@ -96,48 +114,85 @@ class Game:
         self.wait_for_enter = wait_for_enter
         self.dump_state = dump_state
         self.log_file = log_file
+        self.input_source = input_source
+        self.view = view
+        self.playing = False
+        self.agent_positions = {}
+        self.prior_agent_positions = {}
+        self.prior_view_position = view_position
         if log_file:
             open(log_file, 'w').close()
         self._position_cache = None
         for agent in agents:
             self.add_agent(agent)
 
-    def play(self):
-        """Starts the game.
+    def start(self):
+        """Initialize game state before the first ``step()`` call.
+        Call this when using ``step()`` directly (without ``play()``).
+        """
+        self.playing = True
+        self.state.changed = True
+        if self.view is not None:
+            self.view.on_game_start(self)
+
+    def step(self):
+        """Run one game turn: collect input, let each agent act, advance state.
+
+        Call ``start()`` before the first ``step()``.
+        After ``step()`` returns, ``self.playing`` reflects whether the game is still active.
+        If a :class:`retro.views.View` was provided at construction, its ``render()`` is
+        called at the end of each step.
+        """
+        self.turn_number += 1
+        self.keys_pressed = self.input_source.collect()
+        if self.debug and self.keys_pressed:
+            self.log("Keys: " + ', '.join(k.name or str(k) for k in self.keys_pressed))
+        self.prior_view_position = self.view_position
+        self.prior_agent_positions = self.agent_positions
+        for agent in self.agents:
+            if hasattr(agent, 'handle_keystroke'):
+                for key in self.keys_pressed:
+                    agent.handle_keystroke(key, self)
+            if hasattr(agent, 'play_turn'):
+                agent.play_turn(self)
+                self._position_cache = None
+            if getattr(agent, 'display', True):
+                for pos in agent_occupied_positions(agent):
+                    if not self.on_board(pos):
+                        raise IllegalMove(agent, pos)
+        self.agent_positions = self.get_agents_by_position()
+        if self.view is not None:
+            self.view.render(self)
+        self.state.changed = False
+        self.view_position_changed = False
+
+    def play(self, input_source=None):
+        """Start the game in a terminal with interactive input and rendering.
+
+        Arguments:
+            input_source: (Optional) An :class:`retro.input.InputSource` to use
+                instead of the keyboard. When omitted, arrow-key / character
+                input is read from the terminal as normal.
         """
         self.playing = True
         terminal = Terminal()
+        self.input_source = input_source or TerminalInput(terminal)
         with terminal.fullscreen(), terminal.hidden_cursor(), terminal.cbreak():
-            view = View(terminal, color=self.color)
+            term_view = TerminalView(terminal, color=self.color)
+            _saved_view = self.view
+            self.view = term_view
             self.agent_positions = {}
+            self.prior_agent_positions = {}
             self.state.changed = True
+            term_view.on_game_start(self)
             while self.playing:
                 turn_start_time = perf_counter()
-                self.turn_number += 1
-                self.keys_pressed = self.collect_keystrokes(terminal)
-                if self.debug and self.keys_pressed:
-                    self.log("Keys: " + ', '.join(k.name or str(k) for k in self.keys_pressed))
-                self.prior_view_position = self.view_position
-                self.prior_agent_positions = self.agent_positions
-                for agent in self.agents:
-                    if hasattr(agent, 'handle_keystroke'):
-                        for key in self.keys_pressed:
-                            agent.handle_keystroke(key, self)
-                    if hasattr(agent, 'play_turn'):
-                        agent.play_turn(self)
-                        self._position_cache = None
-                    if getattr(agent, 'display', True):
-                        for pos in agent_occupied_positions(agent):
-                            if not self.on_board(pos):
-                                raise IllegalMove(agent, pos)
-                self.agent_positions = self.get_agents_by_position()
-                view.render(self)
-                self.state.changed = False
-                self.view_position_changed = False
+                self.step()
                 turn_end_time = perf_counter()
                 time_elapsed_in_turn = turn_end_time - turn_start_time
-                time_remaining_in_turn = max(0, 1/self.framerate - time_elapsed_in_turn)
+                time_remaining_in_turn = max(0, 1 / self.framerate - time_elapsed_in_turn)
                 sleep(time_remaining_in_turn)
+            self.view = _saved_view
             if self.dump_state:
                 with open(self.dump_state, 'w') as f:
                     json.dump(dict(self.state), f)
@@ -146,20 +201,8 @@ class Game:
                     if terminal.inkey().name in self.EXIT_CHARACTERS:
                         break
 
-    def collect_keystrokes(self, terminal):
-        keys = set()
-        while True:
-            key = terminal.inkey(0.001)
-            if key: 
-                keys.add(key)
-            else:
-                break
-        return keys
-
     def log(self, message):
         """Write a log message.
-        Log messages are shown on screen when debug mode is on. When ``log_file``
-        is set, messages are also written to that file regardless of debug mode.
 
         Arguments:
             message (str): The message to log.
@@ -170,17 +213,14 @@ class Game:
                 f.write(f"{self.turn_number}: {message}\n")
 
     def end(self):
-        """Ends the game. No more turns will run.
-        """
+        """End the game. No more turns will run."""
         self.playing = False
 
     def add_agent(self, agent):
-        """Adds an agent to the game.
-        Whenever you want to add a new agent during the game, you must add it to 
-        the game using this method.
+        """Add an agent to the game.
 
-        Arguments: 
-            agent: An instance of an agent class. 
+        Arguments:
+            agent: An instance of an agent class.
         """
         validate_agent(agent)
         if agent in self.agents:
@@ -189,21 +229,19 @@ class Game:
             for pos in agent_occupied_positions(agent):
                 if not self.on_board(pos):
                     raise IllegalMove(agent, pos)
-        if hasattr(agent, "name"): 
+        if hasattr(agent, "name"):
             if agent.name in self.agents_by_name:
                 raise AgentWithNameAlreadyExists(agent.name)
             self.agents_by_name[agent.name] = agent
         self.agents.append(agent)
 
     def get_agent_by_name(self, name):
-        """Looks up an agent by name. 
-        This is useful when one agent needs to interact with another agent.
+        """Look up an agent by name.
 
-        Arguments: 
-            name (str): The agent's name. If there is no agent with this name, 
-                you will get an error.
+        Arguments:
+            name (str): The agent's name.
 
-        Returns: 
+        Returns:
             An agent.
         """
         validate_agent_name(name)
@@ -213,39 +251,30 @@ class Game:
             raise AgentNotFoundByName(name)
 
     def is_empty(self, position):
-        """Checks whether a position is occupied by any agents.
+        """Check whether a position is unoccupied.
 
-        Arguments: 
+        Arguments:
             position (int, int): The position to check.
 
-        Returns: 
+        Returns:
             A bool
         """
         return position not in self.get_agents_by_position()
 
     def get_agents_by_position(self):
-        """Returns a dict where each key is a position (e.g. (10, 20)) and
-        each value is a list containing all the agents at that position.
-        This is useful when an agent needs to find out which other agents are
-        on the same space or nearby.
-
-        When called during ``play_turn()``, the dict reflects the board state
-        at the start of the current agent's turn, including any moves made by
-        agents that have already taken their turn this round.
-        """
+        """Return a dict mapping each occupied position to a list of agents there."""
         if self._position_cache is not None:
             return self._position_cache
         positions = defaultdict(list)
         for agent in self.agents:
             if getattr(agent, "display", True):
-                validate_position(agent.position)
                 for pos in agent_occupied_positions(agent):
                     positions[pos].append(agent)
         self._position_cache = positions
         return positions
 
     def on_view(self, position):
-        """Checks whether a position is within the current view.
+        """Check whether a position is within the current view.
 
         Arguments:
             position (int, int): The position to check.
@@ -260,7 +289,7 @@ class Game:
         return vox <= x < vox + vw and voy <= y < voy + vh
 
     def remove_agent(self, agent):
-        """Removes an agent from the game. 
+        """Remove an agent from the game.
 
         Arguments:
             agent (Agent): the agent to remove.
@@ -273,7 +302,7 @@ class Game:
                 self.agents_by_name.pop(agent.name)
 
     def remove_agent_by_name(self, name):
-        """Removes an agent from the game. 
+        """Remove an agent from the game by name.
 
         Arguments:
             name (str): the agent's name.
@@ -285,18 +314,14 @@ class Game:
         self.agents.remove(agent)
 
     def on_board(self, position):
-        """Checks whether a position is on the game board.
+        """Check whether a position is on the game board.
 
-        Arguments: 
-            position (int, int): The position to check
+        Arguments:
+            position (int, int): The position to check.
 
-        Returns: 
+        Returns:
             A bool
         """
-        validate_position(position)
         x, y = position
         bx, by = self.board_size
         return x >= 0 and x < bx and y >= 0 and y < by
-
-
-
