@@ -99,8 +99,9 @@ class SnakeHead:
         if self.can_move(next_pos, game):
             apple = game.get_agent_by_name("Apple")
             ax, ay = apple.position
-            if abs(next_pos[0] - ax) + abs(next_pos[1] - ay) > abs(x - ax) + abs(y - ay):
-                game.state['score'] -= 1
+            old_dist = abs(x - ax) + abs(y - ay)
+            new_dist = abs(next_pos[0] - ax) + abs(next_pos[1] - ay)
+            game.state['score'] += old_dist - new_dist  # +1 toward apple, -1 away
             self.position = next_pos
             if self.is_on_apple(self.position, game):
                 apple.relocate(game)
