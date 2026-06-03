@@ -14,7 +14,6 @@ def vector_add(vec0, vec1):
 class TerminalView:
     BORDER_X = 2
     BORDER_Y = 3
-    STATE_HEIGHT = 5
     DEBUG_WIDTH = 60
 
     def __init__(self, terminal, color='white_on_black'):
@@ -106,7 +105,7 @@ class TerminalView:
 
     def render_debug_log(self, game):
         vw, vh = game.view_size
-        debug_height = vh + self.STATE_HEIGHT
+        debug_height = vh + self.state_height(game)
         ox, oy = self.get_debug_origin_coords(game)
         color = self.get_color(self.color)
         for i, (turn_number, message) in enumerate(game.log_messages[-debug_height:]):
@@ -115,7 +114,7 @@ class TerminalView:
 
     def get_layout_graph(self, game):
         vw, vh = game.view_size
-        sh = self.STATE_HEIGHT
+        sh = self.state_height(game)
         ox, oy = self.get_view_origin_coords(game)
         vertices = [
             Vertex(ox - 1, oy - 1),
@@ -150,7 +149,7 @@ class TerminalView:
     def check_terminal_size(self, game):
         vw, vh = game.view_size
         width_needed = vw + self.BORDER_X
-        height_needed = vh + self.BORDER_Y + self.STATE_HEIGHT
+        height_needed = vh + self.BORDER_Y + self.state_height(game)
         if self.terminal.width < width_needed:
             raise TerminalTooSmall(width=self.terminal.width, width_needed=width_needed)
         elif self.terminal.height < height_needed:
@@ -168,6 +167,9 @@ class TerminalView:
         else:
             margin_left = (self.terminal.width - vw - self.BORDER_X) // 2
         return margin_left, margin_top
+
+    def state_height(self, game):
+        return max(len(game.state), 1)
 
     def get_state_origin_coords(self, game):
         vw, vh = game.view_size
