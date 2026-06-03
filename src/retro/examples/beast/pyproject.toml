@@ -3,4 +3,3 @@ actions = ["KEY_RIGHT", "KEY_UP", "KEY_LEFT", "KEY_DOWN"]
 reward = "score"
 character_set = ["*", "H", "█"]
 spatial = true
-observe_state = []
