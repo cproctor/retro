@@ -10,3 +10,4 @@ game is in the :doc:`introduction`. Come back here when you're ready to go furth
 
    large_boards
    agent_size
+   reinforcement_learning
