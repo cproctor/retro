@@ -1,4 +1,4 @@
-from random import randint
+from random import randint, choice
 from retro.game import Game
 
 class Apple:
@@ -101,20 +101,31 @@ class SnakeHead:
             ax, ay = apple.position
             old_dist = abs(x - ax) + abs(y - ay)
             new_dist = abs(next_pos[0] - ax) + abs(next_pos[1] - ay)
-            game.state['score'] += old_dist - new_dist  # +1 toward apple, -1 away
+            game.state['reward'] += old_dist - new_dist  # +1 toward apple, -1 away
+            game.state['energy'] -= 1
             self.position = next_pos
             if self.is_on_apple(self.position, game):
                 apple.relocate(game)
                 self.growing = True
                 game.state['score'] += 50
+                game.state['reward'] += 50
+                game.state['energy'] = 150
             if self.next_segment:
                 self.next_segment.move((x, y), game, growing=self.growing)
             elif self.growing:
                 self.next_segment = SnakeBodySegment(1, (x, y))
                 game.add_agent(self.next_segment)
             self.growing = False
+            bw, bh = game.board_size
+            hx, hy = self.position
+            ax, ay = apple.position
+            game.state['apple_dx'] = (ax - hx) / bw
+            game.state['apple_dy'] = (ay - hy) / bh
+            if game.state['energy'] <= 0:
+                game.state['reward'] -= 10
+                game.end()
         else:
-            game.state['score'] -= 10
+            game.state['reward'] -= 10
             game.end()
 
     def handle_keystroke(self, keystroke, game):
@@ -200,8 +211,27 @@ def create_game():
     """Return a fresh, initialized Snake game."""
     head = SnakeHead()
     apple = Apple()
-    game = Game([head, apple], {'score': 100}, board_size=(32, 16), framerate=12)
+    game = Game(
+        [head, apple],
+        {'score': 0, 'reward': 0, 'energy': 150, 'apple_dx': 0.0, 'apple_dy': 0.0},
+        board_size=(32, 16),
+        framerate=12,
+    )
+    bw, bh = game.board_size
+    head.position = (randint(1, bw - 2), randint(1, bh - 2))
+    direction, character = choice([
+        (SnakeHead.RIGHT, '>'),
+        (SnakeHead.UP,    '^'),
+        (SnakeHead.LEFT,  '<'),
+        (SnakeHead.DOWN,  'v'),
+    ])
+    head.direction = direction
+    head.character = character
     apple.relocate(game)
+    hx, hy = head.position
+    ax, ay = apple.position
+    game.state['apple_dx'] = (ax - hx) / bw
+    game.state['apple_dy'] = (ay - hy) / bh
     return game
 
 
