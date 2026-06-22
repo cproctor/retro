@@ -18,17 +18,22 @@ class ScoreKeeper:
             game.state['score'] -= 1
 
 
-state = {"score": 500}
-maze = Maze(WIDTH, HEIGHT)
-start, end = maze.choose_start_and_end()
-player = Player(start)
-goal = Goal(end)
-game = Game(
-    [player, goal, ScoreKeeper()] + maze.get_agents(),
-    state,
-    board_size=(WIDTH, HEIGHT),
-    view_size=(VIEW_WIDTH, VIEW_HEIGHT),
-    wait_for_enter=True,
-)
-player.center_view(game)
-game.play()
+def create_game():
+    """Return a fresh, initialized Labyrinth game."""
+    maze = Maze(WIDTH, HEIGHT)
+    start, end = maze.choose_start_and_end()
+    player = Player(start)
+    goal = Goal(end)
+    game = Game(
+        [player, goal, ScoreKeeper()] + maze.get_agents(),
+        {"score": 500},
+        board_size=(WIDTH, HEIGHT),
+        view_size=(VIEW_WIDTH, VIEW_HEIGHT),
+        wait_for_enter=True,
+    )
+    player.center_view(game)
+    return game
+
+
+if __name__ == '__main__':
+    create_game().play()
