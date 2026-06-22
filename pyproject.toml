@@ -1,6 +1,6 @@
 [project]
 name = "retro-games"
-version = "2.3.1"
+version = "2.4.0"
 description = "A simple framework for Terminal-based games"
 authors = [{ name = "Chris Proctor", email = "chris@chrisproctor.net>" }]
 readme = "README.md"

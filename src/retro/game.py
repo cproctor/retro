@@ -50,6 +50,10 @@ class Game:
         color (str): (Optional) The game's background color scheme.
         wait_for_enter (bool): (Optional) If True, the game screen stays open after the
             game ends until Enter or Escape is pressed. Defaults to False.
+        show_state (bool): (Optional) If False, ``TerminalView`` does not display the
+            state dict below the board. Defaults to True. Useful for games with small
+            boards or many state keys, where the state pane would otherwise be
+            unreadably narrow or require an oversized terminal.
         dump_state (str): (Optional) A filename. If provided, the game state will be saved
             to that file as JSON when the game ends.
         log_file (str): (Optional) A filename. If provided, all log messages are written
@@ -97,7 +101,7 @@ class Game:
     def __init__(self, agents, state, board_size=(64, 32), view_size=None,
                  view_position=(0, 0), debug=False, framerate=24, color="white_on_black",
                  wait_for_enter=False, dump_state=None, log_file=None,
-                 input_source=None, view=None):
+                 input_source=None, view=None, show_state=True):
         self.log_messages = []
         self.agents_by_name = {}
         self.agents = []
@@ -112,6 +116,7 @@ class Game:
         self.turn_number = 0
         self.color = color
         self.wait_for_enter = wait_for_enter
+        self.show_state = show_state
         self.dump_state = dump_state
         self.log_file = log_file
         self.input_source = input_source
@@ -178,7 +183,7 @@ class Game:
         terminal = Terminal()
         self.input_source = input_source or TerminalInput(terminal)
         with terminal.fullscreen(), terminal.hidden_cursor(), terminal.cbreak():
-            term_view = TerminalView(terminal, color=self.color)
+            term_view = TerminalView(terminal, color=self.color, show_state=self.show_state)
             _saved_view = self.view
             self.view = term_view
             self.agent_positions = {}

@@ -16,10 +16,11 @@ class TerminalView:
     BORDER_Y = 3
     DEBUG_WIDTH = 60
 
-    def __init__(self, terminal, color='white_on_black'):
+    def __init__(self, terminal, color='white_on_black', show_state=True):
         self.terminal = terminal
         self.terminal_size = (self.terminal.width, self.terminal.height)
         self.color = color
+        self.show_state = show_state
         self.initial_render = True
 
     def on_game_start(self, game) -> None:
@@ -29,7 +30,7 @@ class TerminalView:
         if self.initial_render or self.terminal_size_changed():
             self.terminal_size = (self.terminal.width, self.terminal.height)
             self.render_layout(game)
-        if self.initial_render or game.state.changed:
+        if self.show_state and (self.initial_render or game.state.changed):
             self.render_state(game)
         if game.debug:
             self.render_debug_log(game)
@@ -116,31 +117,42 @@ class TerminalView:
         vw, vh = game.view_size
         sh = self.state_height(game)
         ox, oy = self.get_view_origin_coords(game)
-        vertices = [
-            Vertex(ox - 1, oy - 1),
-            Vertex(ox + vw, oy - 1),
-            Vertex(ox + vw, oy + vh),
-            Vertex(ox + vw, oy + vh + sh),
-            Vertex(ox - 1, oy + vh + sh),
-            Vertex(ox - 1, oy + vh)
-        ]
+        top_left = Vertex(ox - 1, oy - 1)
+        top_right = Vertex(ox + vw, oy - 1)
+        board_bottom_right = Vertex(ox + vw, oy + vh)
+        board_bottom_left = Vertex(ox - 1, oy + vh)
+        vertices = [top_left, top_right, board_bottom_right, board_bottom_left]
         edges = [
-            Edge(vertices[0], vertices[1]),
-            Edge(vertices[1], vertices[2]),
-            Edge(vertices[2], vertices[3]),
-            Edge(vertices[3], vertices[4]),
-            Edge(vertices[4], vertices[5]),
-            Edge(vertices[5], vertices[0]),
-            Edge(vertices[5], vertices[2]),
+            Edge(top_left, top_right),
+            Edge(top_right, board_bottom_right),
+            Edge(board_bottom_left, top_left),
         ]
+        # When there's no state pane (sh == 0), bottom_right is just the
+        # board's own bottom-right corner; otherwise it's the bottom-right
+        # corner of the state pane below the board.
+        bottom_right = board_bottom_right
+        if sh > 0:
+            bottom_right = Vertex(ox + vw, oy + vh + sh)
+            bottom_left = Vertex(ox - 1, oy + vh + sh)
+            vertices += [bottom_right, bottom_left]
+            edges += [
+                Edge(board_bottom_right, bottom_right),
+                Edge(bottom_right, bottom_left),
+                Edge(bottom_left, board_bottom_left),
+                Edge(board_bottom_left, board_bottom_right),
+            ]
+        else:
+            edges.append(Edge(board_bottom_left, board_bottom_right))
         graph = Graph(vertices, edges)
         if game.debug:
             dw = self.DEBUG_WIDTH
-            graph.vertices.append(Vertex(ox + vw + dw, oy - 1))
-            graph.vertices.append(Vertex(ox + vw + dw, oy + vh + sh))
-            graph.edges.append(Edge(graph.vertices[1], graph.vertices[6]))
-            graph.edges.append(Edge(graph.vertices[6], graph.vertices[7]))
-            graph.edges.append(Edge(graph.vertices[3], graph.vertices[7]))
+            debug_top_right = Vertex(ox + vw + dw, oy - 1)
+            debug_bottom_right = Vertex(ox + vw + dw, oy + vh + sh)
+            graph.vertices.append(debug_top_right)
+            graph.vertices.append(debug_bottom_right)
+            graph.edges.append(Edge(top_right, debug_top_right))
+            graph.edges.append(Edge(debug_top_right, debug_bottom_right))
+            graph.edges.append(Edge(bottom_right, debug_bottom_right))
         return graph
 
     def terminal_size_changed(self):
@@ -169,6 +181,8 @@ class TerminalView:
         return margin_left, margin_top
 
     def state_height(self, game):
+        if not self.show_state:
+            return 0
         return max(len(game.state), 1)
 
     def get_state_origin_coords(self, game):
