@@ -1,11 +1,11 @@
 [project]
 name = "retro-games"
-version = "2.4.0"
+version = "2.4.1"
 description = "A simple framework for Terminal-based games"
 authors = [{ name = "Chris Proctor", email = "chris@chrisproctor.net>" }]
 readme = "README.md"
 homepage = "https://makingwithcode.org"
-documentation = "https://retro-games.readthedocs.io/en/latest/"
+documentation = "https://docs.makingwithcode.org/retro-games"
 requires-python = ">=3.10,<4.0"
 dependencies = [
     "blessed>=1.33.0",
