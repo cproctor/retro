@@ -97,10 +97,14 @@ class TerminalView:
         return getattr(self.terminal, color_string)
 
     def render_state(self, game):
+        if self.show_state is True:
+            keys = sorted(game.state.keys())
+        else:
+            keys = [k for k in self.show_state if k in game.state]
         vw, vh = game.view_size
         ox, oy = self.get_state_origin_coords(game)
         color = self.get_color(self.color)
-        for i, key in enumerate(sorted(game.state.keys())):
+        for i, key in enumerate(keys):
             msg = f"{key}: {game.state[key]}"[:vw].ljust(vw)
             print(self.terminal.move_xy(ox, oy + i) + color(msg))
 
@@ -132,8 +136,8 @@ class TerminalView:
         # corner of the state pane below the board.
         bottom_right = board_bottom_right
         if sh > 0:
-            bottom_right = Vertex(ox + vw, oy + vh + sh)
-            bottom_left = Vertex(ox - 1, oy + vh + sh)
+            bottom_right = Vertex(ox + vw, oy + vh + sh + 1)
+            bottom_left = Vertex(ox - 1, oy + vh + sh + 1)
             vertices += [bottom_right, bottom_left]
             edges += [
                 Edge(board_bottom_right, bottom_right),
@@ -183,7 +187,9 @@ class TerminalView:
     def state_height(self, game):
         if not self.show_state:
             return 0
-        return max(len(game.state), 1)
+        if self.show_state is True:
+            return len(game.state)
+        return len(self.show_state)
 
     def get_state_origin_coords(self, game):
         vw, vh = game.view_size

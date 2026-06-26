@@ -1,6 +1,6 @@
 [project]
 name = "retro-games"
-version = "2.4.1"
+version = "2.5.0"
 description = "A simple framework for Terminal-based games"
 authors = [{ name = "Chris Proctor", email = "chris@chrisproctor.net>" }]
 readme = "README.md"
@@ -26,8 +26,8 @@ spatial = true
 
 [dependency-groups]
 documentation = [
-    "furo>=2025.12.19",
     "sphinx>=8.1.3",
+    "sphinx-rtd-theme>=3.0",
 ]
 
 

@@ -50,10 +50,10 @@ class Game:
         color (str): (Optional) The game's background color scheme.
         wait_for_enter (bool): (Optional) If True, the game screen stays open after the
             game ends until Enter or Escape is pressed. Defaults to False.
-        show_state (bool): (Optional) If False, ``TerminalView`` does not display the
-            state dict below the board. Defaults to True. Useful for games with small
-            boards or many state keys, where the state pane would otherwise be
-            unreadably narrow or require an oversized terminal.
+        show_state (bool | list): (Optional) Controls which state variables are displayed
+            below the board during play. ``True`` (default) shows all state variables.
+            ``None``, ``False``, or ``[]`` hides the state pane entirely. A list of
+            strings names specific state keys to display.
         dump_state (str): (Optional) A filename. If provided, the game state will be saved
             to that file as JSON when the game ends.
         log_file (str): (Optional) A filename. If provided, all log messages are written
